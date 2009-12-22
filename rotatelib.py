@@ -27,7 +27,7 @@ import os
 
 def is_archive(fn):
     """
-    Determines if the requested filename is an archive or not
+    Determines if the requested filename is an archive or not. See parse_name()
     """
     extensions = ['.gz', '.bz2', '.zip', '.tgz']
     if fn[-3:] in extensions or fn[-4:] in extensions:
@@ -35,6 +35,9 @@ def is_archive(fn):
     return False
 
 def is_backup_table(table):
+    """
+    Determines if the table name is an archive or not. See parse_name()
+    """
     try:
         parsed = parse_name(table)
     except Exception, e:
@@ -117,7 +120,7 @@ def meets_criteria(directory, filename, **kwargs):
         except_hour
         has_date
         hour
-        pattern
+        pattern (regex)
     """
     name = parse_name(filename)
     if ((kwargs.has_key('has_date') and kwargs['has_date'] == True) or not kwargs.has_key('has_date')) and not name['date']:
