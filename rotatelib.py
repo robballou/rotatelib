@@ -34,6 +34,13 @@ def is_archive(fn):
         return True
     return False
 
+def is_backup_table(table):
+    try:
+        parsed = parse_name(table)
+    except Exception, e:
+        raise Exception('Could not parse the table name <%s>: %s' % (table, e))
+    return parsed['date'] != None
+
 def is_log(fn):
     """Determines if the requested filename is an archive or not"""
     extensions = ['.log']
@@ -57,7 +64,7 @@ def parse_name(fn):
     # check YYYYMMDD
     elif re.search(r'(\d{4})(\d{2})(\d{2})', fn):
         result = re.findall(r'(\d{4})(\d{2})(\d{2})', fn)[0]
-        item['date'] = datetime.date(int(result[0]), int(result[1]), int(result[2]))
+        item['date'] = datetime.datetime(int(result[0]), int(result[1]), int(result[2]))
     return item
 
 def list_archives(directory='./', items=None, **kwargs):
@@ -68,6 +75,28 @@ def list_archives(directory='./', items=None, **kwargs):
         items = os.listdir(directory)
     items = [archive for archive in items if is_archive(archive) and meets_criteria(directory, archive, **kwargs)]
     return items
+
+def list_backup_tables(db, db_type=None, **kwargs):
+    """Find backed up tables in the database"""
+    cur = db.cursor()
+    tables = None
+    if db_type == 'mysql' or db_type == None:
+        try:
+            cur.execute('SHOW TABLES')
+            tables = [table[0] for table in cur.fetchall()]
+        except Exception, e:
+            pass
+    if not tables and (db_type in ['sqlite', 'sqlite3'] or db_type == None):
+        try:
+            cur.execute('''SELECT * FROM sqlite_master WHERE type='table' ''')
+            tables = [table[1] for table in cur.fetchall()]
+        except Exception, e:
+            raise e
+    
+    if not tables: raise Exception('Could not figure out the database type or get a list of tables')
+    
+    backup_tables = [table for table in tables if is_backup_table(table) and meets_criteria(db, table, **kwargs)]
+    return backup_tables
 
 def list_logs(directory='./', items=None, **kwargs):
     """
@@ -124,11 +153,19 @@ def meets_criteria(directory, filename, **kwargs):
                 return False
     return True
 
-def remove_items(directory='./', items=None):
+def remove_items(directory='./', items=None, db=None):
     """
     Delete the items in the directory/items list
     """
     if not items: return
-    for item in items:
-        this_item = os.path.join(directory, item)
-        os.remove(this_item)
+    if not db:
+        for item in items:
+            this_item = os.path.join(directory, item)
+            os.remove(this_item)
+    else:
+        cur = db.cursor()
+        for item in items:
+            try:
+                cur.execute("DROP TABLE %s" % item)
+            except Exception, e:
+                pass
