@@ -1,5 +1,5 @@
 """
-Module for assisting in querying the file system for backups to rotate
+Module for assisting in querying the file system and databases for backups to rotate
 
 Currently can parse the following date formats in file names:
 
@@ -14,6 +14,15 @@ Example usage:
 ...
 >>> items = rotatelib.list_archives(directory='/backups/', before=datetime.datetime(2009, 6, 20))
 >>> rotatelib.remove_items(items)
+
+Can also handle database connections:
+
+>>> import datetime
+>>> import rotatelib
+>>> import MySQLdb
+>>> db = MySQLdb.connect('localhost', 'user', 'password', 'my_database')
+>>> items = rotatelib.list_backup_tables(db=db, before=datetime.timedelta(5))
+>>> rotatelib.remove_items(db=db, items)
 
 """
 __author__ = 'Rob Ballou (rob.ballou@gmail.com)'
