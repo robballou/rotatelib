@@ -17,7 +17,7 @@ Sample Python script using rotatelib:
     # remove those backups we just found
     rotatelib.remove_items(directory=backups, items=items)
 
-## Database exammple
+## Database example
 
 You may also now give it database connections to work with:
 
