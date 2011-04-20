@@ -24,9 +24,21 @@ Can also handle database connections:
 >>> items = rotatelib.list_backup_tables(db=db, before=datetime.timedelta(5))
 >>> rotatelib.remove_items(db=db, items)
 
+And now S3 connections, if you have the boto library installed:
+
+>>> import datetime
+>>> import rotatelib
+>>> rotatelib.list_archives(s3bucket='mybucket', directory='/backups/', before=datetime.timedelta(1))
+...
+>>> items = rotatelib.list_archives(s3bucket='mybucket', directory='/backups/', before=datetime.datetime(2009, 6, 20))
+>>> rotatelib.remove_items(items=items, s3bucket='mybucket')
+
+For S3 connections to work, you'll need the AWS_SECRET_ACCESS_KEY and AWS_ACCESS_KEY_ID variables set in your
+environment or you'll need to pass those as keyword arguments to list_archives or remove_items.
+
 """
 __author__ = 'Rob Ballou (rob.ballou@gmail.com)'
-__version__ = '0.1'
+__version__ = '0.5'
 __license__ = 'MIT'
 
 import optparse
@@ -39,11 +51,26 @@ try:
 except ImportError, e:
     pass
 
+def connect_to_s3(aws_access_key_id, aws_secret_access_key):
+    if not aws_secret_access_key and not os.environ['AWS_SECRET_ACCESS_KEY']:
+        raise Exception('The AWS_SECRET_ACCESS_KEY was not set. Either set this environment variable or pass it as aws_secret_access_key')
+    if not aws_access_key_id and not os.environ['AWS_ACCESS_KEY_ID']:
+        raise Exception('The AWS_ACCESS_KEY_ID was not set. Either set this environment variable or pass it as aws_access_key_id')
+    if not aws_access_key_id:
+        aws_access_key_id = os.environ['AWS_ACCESS_KEY_ID']
+    if not aws_secret_access_key:
+        aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
+    return S3Connection(aws_access_key_id, aws_secret_access_key)
+
 def is_archive(fn):
     """
     Determines if the requested filename is an archive or not. See parse_name()
     """
     extensions = ['.gz', '.bz2', '.zip', '.tgz']
+    try:
+        fn = fn.key
+    except:
+        pass
     basename, extension = os.path.splitext(fn)
     if extension in extensions:
         return True
@@ -71,6 +98,10 @@ def parse_name(fn):
     Figure out if the given filename has a date portion or not. This returns a dictionary with the 
     name of the item and the date, if applicable.
     """
+    try:
+        fn = fn.key
+    except:
+        pass
     item = {'name': fn, 'date': None}
     # check YYYY-MM-DDTHHMM-Z
     if re.search(r'(\d{4})-(\d{2})-(\d{2})T(\d{2})(\d{2})?-?(\d{4})?', fn):
@@ -97,18 +128,10 @@ def list_archives(directory='./', items=None, s3bucket=None, aws_access_key_id=N
         else:
             # s3 request
             try:
-                if not aws_secret_access_key and not os.environ['AWS_SECRET_ACCESS_KEY']:
-                    raise Exception('The AWS_SECRET_ACCESS_KEY was not set. Either set this environment variable or pass it as aws_secret_access_key')
-                if not aws_access_key_id and not os.environ['AWS_ACCESS_KEY_ID']:
-                    raise Exception('The AWS_ACCESS_KEY_ID was not set. Either set this environment variable or pass it as aws_access_key_id')
-                if not aws_access_key_id:
-                    aws_access_key_id = os.environ['AWS_ACCESS_KEY_ID']
-                if not aws_secret_access_key:
-                    aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
-                s3 = S3Connection(aws_access_key_id, aws_secret_access_key)
+                s3 = connect_to_s3(aws_access_key_id, aws_secret_access_key)
                 bucket = s3.get_bucket(s3bucket)
                 if directory == './': directory = ''
-                items = bucket.list(directory)
+                items = [item for item in bucket.list(directory)]
             except NameError, e:
                 raise Exception('To use the S3 library, you must have the boto python library')
             
@@ -148,7 +171,10 @@ def list_logs(directory='./', items=None, **kwargs):
 
 def meets_criteria(directory, filename, **kwargs):
     """
-    Check the filename to see if it meets the criteria for this query
+    Check the filename to see if it meets the criteria for this query.
+    
+    Note: the has_date criteria is "on" by default. So if you don't specify that as "off" then
+    this will only pass items that have a date in the filename!
     
     Current criteria:
         after
@@ -158,6 +184,10 @@ def meets_criteria(directory, filename, **kwargs):
         hour
         pattern (regex)
     """
+    try:
+        filename = filename.key
+    except:
+        pass
     name = parse_name(filename)
     if ((kwargs.has_key('has_date') and kwargs['has_date'] == True) or not kwargs.has_key('has_date')) and not name['date']:
         return False
@@ -192,15 +222,20 @@ def meets_criteria(directory, filename, **kwargs):
                 return False
     return True
 
-def remove_items(directory='./', items=None, db=None):
+def remove_items(directory='./', items=None, db=None, s3bucket=None, aws_access_key_id=None, aws_secret_access_key=None):
     """
     Delete the items in the directory/items list
     """
     if not items: return
-    if not db:
+    if not db and not s3bucket:
         for item in items:
             this_item = os.path.join(directory, item)
             os.remove(this_item)
+    elif not db and s3bucket:
+        s3 = connect_to_s3(aws_access_key_id, aws_secret_access_key)
+        bucket = s3.get_bucket(s3bucket)
+        for item in items:
+            bucket.delete_key(item.key)
     else:
         cur = db.cursor()
         for item in items:
