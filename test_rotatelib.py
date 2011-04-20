@@ -34,6 +34,9 @@ class TestArchiveFunctions(unittest.TestCase):
         self.assertTrue(result['date'])
         self.assertEqual(result['date'].year, 2009)
         self.assertEqual(result['date'].month, 6)
+    
+    def testMakeList(self):
+        self.assertEqual([1], rotatelib._make_list(1))
 
 class TestRotationFunctions(unittest.TestCase):
     def testListArchive(self):
@@ -66,6 +69,54 @@ class TestRotationFunctions(unittest.TestCase):
         archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), hour=12)
         self.assertEqual(len(archives), 0)
         archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), hour=11)
+        self.assertEqual(len(archives), 1)
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), hour=[11, 12])
+        self.assertEqual(len(archives), 1)
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), hour=[13, 12])
+        self.assertEqual(len(archives), 0)
+    
+    def testListArchiveWithExceptHourCriteria(self):
+        items = ['test.txt', 'test2009-06-15T11.zip', 'test2009-06-20T01.bz2', 'test.zip']
+        # sanity check
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 21))
+        self.assertEqual(len(archives), 2)
+        
+        # ignore 11
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 21), except_hour=11)
+        self.assertEqual(len(archives), 1)
+        
+        # ignore 12 (doesn't match anything)
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 21), except_hour=12)
+        self.assertEqual(len(archives), 2)
+        
+        # ignore 11 and 12
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 21), except_hour=[11, 12])
+        self.assertEqual(len(archives), 1)
+        
+        # ignore 13 and 12
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 21), except_hour=[13, 12])
+        self.assertEqual(len(archives), 2)
+    
+    def testListArchiveWithDayCriteria(self):
+        items = ['test.txt', 'test2009-06-15T11.zip', 'test2009-06-20T01.bz2', 'test.zip']
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), day=1)
+        self.assertEqual(len(archives), 0)
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), day=15)
+        self.assertEqual(len(archives), 1)
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), day=[1,15])
+        self.assertEqual(len(archives), 1)
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), day=[2,4])
+        self.assertEqual(len(archives), 0)
+    
+    def testListArchiveWithExceptDayCriteria(self):
+        items = ['test.txt', 'test2009-06-15T11.zip', 'test2009-06-20T01.bz2', 'test.zip']
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), except_day=15)
+        self.assertEqual(len(archives), 0)
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), except_day=1)
+        self.assertEqual(len(archives), 1)
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), except_day=[1, 15])
+        self.assertEqual(len(archives), 0)
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), except_day=[1, 12])
         self.assertEqual(len(archives), 1)
 
 class TestDBRotationFunctions(unittest.TestCase):
