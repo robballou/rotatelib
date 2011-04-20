@@ -34,6 +34,11 @@ import re
 import datetime
 import os
 
+try:
+    from boto.s3.connection import S3Connection
+except ImportError, e:
+    pass
+
 def is_archive(fn):
     """
     Determines if the requested filename is an archive or not. See parse_name()
@@ -79,12 +84,33 @@ def parse_name(fn):
         item['date'] = datetime.datetime(int(result[0]), int(result[1]), int(result[2]))
     return item
 
-def list_archives(directory='./', items=None, **kwargs):
+def list_archives(directory='./', items=None, s3bucket=None, aws_access_key_id=None, aws_secret_access_key=None, **kwargs):
     """
     List all of the archive files in the directory that meet the criteria (see meets_criteria())
     """
+
     if not items:
-        items = os.listdir(directory)
+        if not s3bucket:
+            # regular file system request
+            items = os.listdir(directory)
+        else:
+            # s3 request
+            try:
+                if not aws_secret_access_key and not os.environ['AWS_SECRET_ACCESS_KEY']:
+                    raise Exception('The AWS_SECRET_ACCESS_KEY was not set. Either set this environment variable or pass it as aws_secret_access_key')
+                if not aws_access_key_id and not os.environ['AWS_ACCESS_KEY_ID']:
+                    raise Exception('The AWS_ACCESS_KEY_ID was not set. Either set this environment variable or pass it as aws_access_key_id')
+                if not aws_access_key_id:
+                    aws_access_key_id = os.environ['AWS_ACCESS_KEY_ID']
+                if not aws_secret_access_key:
+                    aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
+                s3 = S3Connection(aws_access_key_id, aws_secret_access_key)
+                bucket = s3.get_bucket(s3bucket)
+                if directory == './': directory = ''
+                items = bucket.list(directory)
+            except NameError, e:
+                raise Exception('To use the S3 library, you must have the boto python library')
+            
     items = [archive for archive in items if is_archive(archive) and meets_criteria(directory, archive, **kwargs)]
     return items
 
