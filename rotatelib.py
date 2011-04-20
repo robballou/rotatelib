@@ -26,7 +26,7 @@ Can also handle database connections:
 
 """
 __author__ = 'Rob Ballou (rob.ballou@gmail.com)'
-__version__ = '0.1'
+__version__ = '0.2'
 __license__ = 'MIT'
 
 import collections
