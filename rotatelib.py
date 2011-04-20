@@ -65,6 +65,8 @@ def connect_to_s3(aws_access_key_id, aws_secret_access_key):
 def is_archive(fn):
     """
     Determines if the requested filename is an archive or not. See parse_name()
+    
+    Returns True/False
     """
     extensions = ['.gz', '.bz2', '.zip', '.tgz']
     try:
@@ -79,6 +81,8 @@ def is_archive(fn):
 def is_backup_table(table):
     """
     Determines if the table name is an archive or not. See parse_name()
+    
+    Returns True/False
     """
     try:
         parsed = parse_name(table)
