@@ -1,6 +1,6 @@
 # Rotatelib
 
-Module for assisting in querying the file system and databases for backups to rotate
+Module for assisting in querying the file system and databases for backups to rotate.
 
 ## Filesystem example
 
@@ -33,6 +33,20 @@ You may also now give it database connections to work with:
     # remove those backups we just found
     rotatelib.remove_items(db=db, items=items)
 
+## Criteria
+
+To help query for the items you want, there are a number of criteria tests:
+
+  - after (datetime or timedelta)
+  - before (datetime or timedelta)
+  - day (int or list of ints)
+  - except_day (int or list of ints)
+  - except_hour (int or list of ints)
+  - has_date (datetime)
+  - hour (int or list of ints)
+  - pattern (regex)
+
+New in version 0.2: `day` and `except_day` were added. `day`, `hour`, `except_day`, and `except_hour` all except lists as well.
 
 ## S3 example
 

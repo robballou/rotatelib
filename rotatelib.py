@@ -41,6 +41,7 @@ __author__ = 'Rob Ballou (rob.ballou@gmail.com)'
 __version__ = '0.5'
 __license__ = 'MIT'
 
+import collections
 import optparse
 import re
 import datetime
@@ -218,6 +219,11 @@ def list_logs(directory='./', items=None, s3bucket=None, aws_access_key_id=None,
     items = [archive for archive in items if is_log(archive) and meets_criteria(directory, archive, **kwargs)]
     return items
 
+def _make_list(item):
+    if not isinstance(item, collections.Iterable):
+        item = [item]
+    return item
+
 def meets_criteria(directory, filename, **kwargs):
     """
     Check the filename to see if it meets the criteria for this query.
@@ -228,6 +234,8 @@ def meets_criteria(directory, filename, **kwargs):
     Current criteria:
         after
         before
+        day
+        exceot_day
         except_hour
         has_date
         hour
@@ -262,12 +270,24 @@ def meets_criteria(directory, filename, **kwargs):
             if name['date'] < kwargs['after']:
                 return False
         if kwargs.has_key('hour'):
+            kwargs['hour'] = _make_list(kwargs['hour'])
             # ignore any hour besides the requested one
-            if name['date'].hour != kwargs['hour']:
+            if name['date'].hour not in kwargs['hour']:
                 return False
         if kwargs.has_key('except_hour'):
+            kwargs['except_hour'] = _make_list(kwargs['except_hour'])
             # ignore the specified hour
-            if name['date'].hour == kwargs['except_hour']:
+            if name['date'].hour in kwargs['except_hour']:
+                return False
+        if kwargs.has_key('day'):
+            kwargs['day'] = _make_list(kwargs['day'])
+            # ignore any day besides the requested on
+            if name['date'].day not in kwargs['day']:
+                return False
+        if kwargs.has_key('except_day'):
+            kwargs['except_day'] = _make_list(kwargs['except_day'])
+            # ignore any day besides the requested on
+            if name['date'].day in kwargs['except_day']:
                 return False
     return True
 
