@@ -5,7 +5,7 @@ import sqlite3
 
 class TestArchiveFunctions(unittest.TestCase):
     def testIsArchiveReturnsFalse(self):
-        files = ['test.txt', '.test', 'something.sql']
+        files = ['test.txt', '.test', 'something.sql', 'something.min.js']
         for f in files:
             self.assertFalse(rotatelib.is_archive(f))
     

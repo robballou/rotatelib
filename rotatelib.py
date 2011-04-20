@@ -44,7 +44,8 @@ def is_archive(fn):
     Determines if the requested filename is an archive or not. See parse_name()
     """
     extensions = ['.gz', '.bz2', '.zip', '.tgz']
-    if fn[-3:] in extensions or fn[-4:] in extensions:
+    basename, extension = os.path.splitext(fn)
+    if extension in extensions:
         return True
     return False
 
