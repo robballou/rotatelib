@@ -3,6 +3,12 @@ import rotatelib
 import datetime
 import sqlite3
 
+class SnapshotMock(object):
+    def __init__(self, description=None, start_time=None):
+        self.description = description
+        self.start_time = start_time
+    
+
 class TestArchiveFunctions(unittest.TestCase):
     def testIsArchiveReturnsFalse(self):
         files = ['test.txt', '.test', 'something.sql', 'something.min.js']
@@ -35,6 +41,45 @@ class TestArchiveFunctions(unittest.TestCase):
         self.assertEqual(result['date'].year, 2009)
         self.assertEqual(result['date'].month, 6)
     
+    def testParseNameSnapshotObject(self):
+        o = SnapshotMock('Test 2011-01-01')
+        result = rotatelib.parse_name(o)
+        self.assertTrue(result['date'])
+        self.assertEqual(result['date'].year, 2011)
+        self.assertEqual(result['date'].month, 1)
+        
+        o = SnapshotMock('Test 2011-01-01', '2011-01-01T01:30:00.000Z')
+        result = rotatelib.parse_name(o)
+        self.assertTrue(result['date'])
+        self.assertEqual(result['date'].year, 2011)
+        self.assertEqual(result['date'].month, 1)
+        self.assertEqual(result['date'].hour, 0)
+        
+        o = SnapshotMock('Test', '2011-01-01T01:30:00.000Z')
+        result = rotatelib.parse_name(o)
+        self.assertTrue(result['date'])
+        self.assertEqual(result['date'].year, 2011)
+        self.assertEqual(result['date'].month, 1)
+        self.assertEqual(result['date'].hour, 1)
+        self.assertEqual(result['date'].minute, 30)
+        
+        # check that snapshot_use_start_time prefers the start_time
+        o = SnapshotMock('Test 2011-02-01', '2011-01-01T01:30:00.000Z')
+        result = rotatelib.parse_name(o, snapshot_use_start_time=True)
+        self.assertTrue(result['date'])
+        self.assertEqual(result['date'].year, 2011)
+        self.assertEqual(result['date'].month, 1)
+        self.assertEqual(result['date'].hour, 1)
+        self.assertEqual(result['date'].minute, 30)
+        
+        # check that prefers description
+        o = SnapshotMock('Test 2011-02-01', '2011-01-01T01:30:00.000Z')
+        result = rotatelib.parse_name(o, snapshot_use_start_time=False)
+        self.assertTrue(result['date'])
+        self.assertEqual(result['date'].year, 2011)
+        self.assertEqual(result['date'].month, 2)
+        self.assertEqual(result['date'].hour, 0)
+    
     def testMakeList(self):
         self.assertEqual([1], rotatelib._make_list(1))
 
@@ -50,9 +95,11 @@ class TestRotationFunctions(unittest.TestCase):
         self.assertEqual(len(archives), 1)
     
     def testMeetsCriteriaWithBefore(self):
-        files = ['file2009-06-20T15.sql.bz2', 'file2009-06-25T15.sql.bz2']
+        files = ['file2009-06-20T15.sql.bz2', 'file2009-06-25T15.sql.bz2', 'file2009-06-25.sql.bz2']
         self.assertTrue(rotatelib.meets_criteria('./', files[0], before=datetime.datetime.today()))
         self.assertFalse(rotatelib.meets_criteria('./', files[1], before=datetime.datetime(2009, 6, 23)))
+        self.assertFalse(rotatelib.meets_criteria('./', files[1], before=datetime.datetime(2009, 6, 25)))
+        self.assertFalse(rotatelib.meets_criteria('./', files[2], before=datetime.datetime(2009, 6, 25)))
     
     def testMeetsCriteriaWithBeforeDelta(self):
         files = ['file2009-06-20T15.sql.bz2', 'file2009-06-25T15.sql.bz2']
@@ -60,9 +107,10 @@ class TestRotationFunctions(unittest.TestCase):
         self.assertFalse(rotatelib.meets_criteria('./', files[1], before=datetime.datetime(2009, 6, 23)))
     
     def testMeetsCriteriaWithAfter(self):
-        files = ['file2009-06-20T15.sql.bz2', 'file2009-06-25T15.sql.bz2']
+        files = ['file2009-06-20T15.sql.bz2', 'file2009-06-25T15.sql.bz2', 'file2009-06-25.sql.bz2']
         self.assertFalse(rotatelib.meets_criteria('./', files[0], after=datetime.datetime.today()))
         self.assertTrue(rotatelib.meets_criteria('./', files[1], after=datetime.datetime(2009, 6, 23)))
+        self.assertFalse(rotatelib.meets_criteria('./', files[2], after=datetime.datetime(2009, 6, 25)))
     
     def testListArchiveWithHourCriteria(self):
         items = ['test.txt', 'test2009-06-15T11.zip', 'test2009-06-20T01.bz2', 'test.zip']
@@ -118,6 +166,27 @@ class TestRotationFunctions(unittest.TestCase):
         self.assertEqual(len(archives), 0)
         archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), except_day=[1, 12])
         self.assertEqual(len(archives), 1)
+    
+    def testListArchiveWithStartswithCriteria(self):
+        items = ['test.txt', 'test2009-06-15T11.zip', 'test2009-06-20T01.bz2', 'test.zip']
+        archives = rotatelib.list_archives(items=items, startswith='test')
+        self.assertEqual(len(archives), 2)
+        archives = rotatelib.list_archives(items=items, startswith=['test', 'asdf'])
+        self.assertEqual(len(archives), 2)
+        archives = rotatelib.list_archives(items=items, startswith='asdf')
+        self.assertEqual(len(archives), 0)
+        archives = rotatelib.list_archives(items=items, startswith='test', before=datetime.datetime(2009, 6, 21))
+        self.assertEqual(len(archives), 2)
+        archives = rotatelib.list_archives(items=items, startswith='test', before=datetime.datetime(2009, 6, 20))
+        self.assertEqual(len(archives), 1)
+    
+    def testListArchiveWithExceptStartswithCriteria(self):
+        items = ['test.txt', 'test2009-06-15T11.zip', 'test2009-06-20T01.bz2', 'test.zip']
+        archives = rotatelib.list_archives(items=items, except_startswith='test')
+        self.assertEqual(len(archives), 0)
+        archives = rotatelib.list_archives(items=items, except_startswith='asdf')
+        self.assertEqual(len(archives), 2)
+        
 
 class TestDBRotationFunctions(unittest.TestCase):
     def create_tables(self, db, tables):
