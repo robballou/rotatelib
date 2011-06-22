@@ -113,8 +113,8 @@ To help query for the items you want, there are a number of criteria tests:
   - startswith (string or list of strings)
   - pattern (regex)
 
-New in version 0.6: `startswith` and `except_startswith` were added.
-New in version 0.2: `day` and `except_day` were added. `day`, `hour`, `except_day`, and `except_hour` all accept lists as well.
+**New in version 0.6:** `startswith` and `except_startswith` were added.  
+**New in version 0.2:** `day` and `except_day` were added. `day`, `hour`, `except_day`, and `except_hour` all accept lists as well.
 
 ## License
 
