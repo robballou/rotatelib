@@ -149,16 +149,23 @@ def list_archives(directory='./', items=None, s3bucket=None, ec2snapshots=None, 
     """
     
     if not items:
+        # what type of connection/filesystem are we using?
         if not s3bucket and not ec2snapshots:
             # regular file system request
-            items = os.listdir(directory)
+            directory = _make_list(directory)
+            items = []
+            for d in directory:
+                items.extend(os.listdir(d))
         elif s3bucket and not ec2snapshots:
             # s3 request
             try:
                 s3 = connect_to_s3(aws_access_key_id, aws_secret_access_key)
                 bucket = s3.get_bucket(s3bucket)
-                if directory == './': directory = ''
-                items = [item for item in bucket.list(directory)]
+                items = []
+                directory = _make_list(directory)
+                for d in directory:
+                    if d == './': d = ''
+                    items.extend([item for item in bucket.list(d)])
             except NameError, e:
                 raise Exception('To use the S3 library, you must have the boto python library: %s' % s)
         elif ec2snapshots and not s3bucket:
@@ -214,21 +221,28 @@ def list_logs(directory='./', items=None, s3bucket=None, aws_access_key_id=None,
     if not items:
         if not s3bucket:
             # regular file system request
-            items = os.listdir(directory)
+            directory = _make_list(directory)
+            items = []
+            for d in directory:
+                items.extend(os.listdir(d))
         else:
             # s3 request
             try:
                 s3 = connect_to_s3(aws_access_key_id, aws_secret_access_key)
                 bucket = s3.get_bucket(s3bucket)
-                if directory == './': directory = ''
-                items = [item for item in bucket.list(directory)]
+                directory = _make_list(directory)
+                items = []
+                for d in directory:
+                    if d == './': d = ''
+                    items.extend([item for item in bucket.list(directory)])
+                if debug: print items
             except NameError, e:
                 raise Exception('To use the S3 library, you must have the boto python library')
     items = [archive for archive in items if is_log(archive) and meets_criteria(directory, archive, **kwargs)]
     return items
 
 def _make_list(item):
-    if not isinstance(item, collections.Iterable):
+    if isinstance(item, basestring) or not isinstance(item, collections.Iterable):
         item = [item]
     return item
 
@@ -254,16 +268,25 @@ def meets_criteria(directory, filename, **kwargs):
         debug
         snapshot_use_start_time
     """
+    # get the filename ... this is a bit "complicated" because we need to handle
+    # filenames that might be either EC2 snapshots or S3 items
     try:
+        # is this an EC2 snapshot?
         filename = filename.description
     except:
         try:
+            # is this an s3 item?
             filename = filename.key
         except:
             pass
+    
+    # check if we are using the snapshot_use_start_time option
     snapshot_use_start_time = False
     if kwargs.has_key('snapshot_use_start_time'): snapshot_use_start_time = kwargs['snapshot_use_start_time']
+    
+    # parse the filename
     name = parse_name(filename, snapshot_use_start_time=snapshot_use_start_time)
+    
     # check that we parsed a date
     if ((kwargs.has_key('has_date') and kwargs['has_date'] == True) or not kwargs.has_key('has_date')) and not name['date']:
         return False

@@ -32,6 +32,14 @@ class S3TestCase(unittest.TestCase):
         k2 = Key(bucket)
         k2.key = '/folder1/backup20110420.sql.bz2'
         k2.set_contents_from_filename('test_bucket/folder1/backup20110420.sql.bz2')
+        
+        k3 = Key(bucket)
+        k3.key = '/folder2/file2.txt.bz2'
+        k3.set_contents_from_filename('test_bucket/folder2/file2.txt.bz2')
+        
+        k4 = Key(bucket)
+        k4.key = '/folder3/file3.bz2'
+        k4.set_contents_from_filename('test_bucket/folder3/file3.bz2')
     
     def tearDown(self):
         """Destroy our test bucket"""
@@ -60,7 +68,21 @@ class TestRotatelibFunctionsWithS3(S3TestCase):
         archives = rotatelib.list_archives(s3bucket=TEST_BUCKET_NAME)
         self.assertEqual(len(archives), 1)
         archives = rotatelib.list_archives(s3bucket=TEST_BUCKET_NAME, has_date=False)
+        self.assertEqual(len(archives), 4)
+    
+    def testListArchivesWithSingleDirectory(self):
+        archives = rotatelib.list_archives(s3bucket=TEST_BUCKET_NAME, directory='folder1')
+        self.assertEqual(len(archives), 1)
+        archives = rotatelib.list_archives(s3bucket=TEST_BUCKET_NAME, directory=['folder1'])
+        self.assertEqual(len(archives), 1)
+        archives = rotatelib.list_archives(s3bucket=TEST_BUCKET_NAME, has_date=False, directory='folder1')
         self.assertEqual(len(archives), 2)
+    
+    def testListArchivesWithMultipleDirectories(self):
+        archives = rotatelib.list_archives(s3bucket=TEST_BUCKET_NAME, directory=['folder1', 'folder2'])
+        self.assertEqual(len(archives), 1)
+        archives = rotatelib.list_archives(s3bucket=TEST_BUCKET_NAME, has_date=False, directory=['folder1', 'folder3'])
+        self.assertEqual(len(archives), 3)
     
     def testRemoveItems(self):
         archives = rotatelib.list_archives(s3bucket=TEST_BUCKET_NAME)
@@ -68,7 +90,7 @@ class TestRotatelibFunctionsWithS3(S3TestCase):
         archives = rotatelib.list_archives(s3bucket=TEST_BUCKET_NAME)
         self.assertEqual(len(archives), 0)
         archives = rotatelib.list_archives(s3bucket=TEST_BUCKET_NAME, has_date=False)
-        self.assertEqual(len(archives), 1)
+        self.assertEqual(len(archives), 3)
 
 if __name__ == "__main__":
     unittest.main()

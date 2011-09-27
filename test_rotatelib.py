@@ -251,5 +251,14 @@ class TestDBRotationFunctions(unittest.TestCase):
         self.assertEqual(len(tables), 4)
     
 
+class TestMultipleDirectories(unittest.TestCase):
+    def test_SingleDirectory(self):
+        items = rotatelib.list_logs(directory='test_file_system/folder1')
+        self.assertEqual(len(items), 1)
+    
+    def test_ListMultipleDirectories(self):
+        items = rotatelib.list_logs(directory=['test_file_system/folder1', 'test_file_system/folder2'])
+        self.assertEqual(len(items), 2)
+
 if __name__ == "__main__":
     unittest.main()
