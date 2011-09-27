@@ -1,6 +1,6 @@
 # Rotatelib
 
-Version: 0.6
+Version: 0.7
 
 Module for assisting in querying the file system, databases, or Amazon Web Services (AWS) for backups/archives to rotate.
 
@@ -18,12 +18,15 @@ Sample Python script using rotatelib:
 
     import datettime
     import rotatelib
-
+    
     backups = '/my/backups/'
-
+    
     # find any backups that are older than 5 days
     items = rotatelib.list_archives(directory=backups, before=datetime.timedelta(5))
-
+    
+    # you can also find backups in multiple locations
+    items = rotatelib.list_archives(directory=['/backups1/', '/backups2/'], before=datetime.timedelta(5), except_day=[1, 15])
+    
     # remove those backups we just found
     rotatelib.remove_items(directory=backups, items=items)
 
@@ -63,6 +66,12 @@ bucket:
     
     # list all archive items that are older than 5 days
     items = rotatelib.list_archives(s3bucket='mybucket', before=datetime.timedelta(5))
+    
+    # you can also use the directory option with S3
+    items = rotatelib.list_archives(s3bucket='mybucket', before=datetime.timedelta(5), directory='mydirectory')
+    
+    # or multiple directories
+    items = rotatelib.list_archives(s3bucket='mybucket', before=datetime.timedelta(5), directory=['dir1', 'dir2'])
     
     rotatelib.remove_items(items=items, s3bucket='mybucket')
 
