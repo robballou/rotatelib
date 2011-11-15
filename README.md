@@ -16,7 +16,7 @@ Module for assisting in querying the file system, databases, or Amazon Web Servi
 
 Sample Python script using rotatelib:
 
-    import datettime
+    import datetime
     import rotatelib
 
     backups = '/my/backups/'
@@ -31,7 +31,7 @@ Sample Python script using rotatelib:
 
 You may also now give it database connections to work with:
 
-    import datettime
+    import datetime
     import rotatelib
     import MySQLdb
 
