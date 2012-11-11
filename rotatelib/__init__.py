@@ -45,6 +45,8 @@ import collections
 import re
 import datetime
 import os
+import criteria
+import inspect
 
 try:
     from boto.s3.connection import S3Connection
@@ -52,6 +54,15 @@ try:
     from boto.ec2.snapshot import Snapshot
 except ImportError, e:
     pass
+
+CRITERIA = {
+    # 'has_date': criteria.HasDate,
+    # 'pattern': criteria.Pattern
+}
+
+
+def add_criteria(class_name):
+    CRITERIA.append(class_name)
 
 
 def connect_to_ec2(aws_access_key_id, aws_secret_access_key):
@@ -90,6 +101,21 @@ def connect_to_s3(aws_access_key_id, aws_secret_access_key):
     if not aws_secret_access_key:
         aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
     return S3Connection(aws_access_key_id, aws_secret_access_key)
+
+
+def get_criteria():
+    """
+    Get the criteria available for this module
+    """
+    for item in criteria.__dict__:
+        this_item = criteria.__dict__[item]
+        if inspect.isclass(this_item) and issubclass(this_item, criteria.BaseCriteria):
+            criteria_name = this_item.criteria_name
+            if not criteria_name:
+                criteria_name = item.lower()
+            if criteria_name not in CRITERIA:
+                CRITERIA[criteria_name] = this_item
+    return CRITERIA
 
 
 def is_archive(fn):
@@ -269,6 +295,8 @@ def meets_criteria(directory, filename, **kwargs):
         debug
         snapshot_use_start_time
     """
+    return meets_criteria2(directory, filename, **kwargs)
+    # figure out the filename
     try:
         filename = filename.description
     except:
@@ -279,7 +307,13 @@ def meets_criteria(directory, filename, **kwargs):
     snapshot_use_start_time = False
     if 'snapshot_use_start_time' in kwargs:
         snapshot_use_start_time = kwargs['snapshot_use_start_time']
+
+    # parse the filename
     name = parse_name(filename, snapshot_use_start_time=snapshot_use_start_time)
+
+    # get the available criteria
+    # criteria = get_criteria()
+
     # check that we parsed a date
     if (('has_date' in kwargs and kwargs['has_date'] == True) or not 'has_date' in kwargs) and not name['date']:
         return False
@@ -360,6 +394,40 @@ def meets_criteria(directory, filename, **kwargs):
                 if 'debug' in kwargs:
                     print "Failed Except Day"
                 return False
+    return True
+
+
+def meets_criteria2(directory, filename, **kwargs):
+    # figure out the filename
+    try:
+        filename = filename.description
+    except:
+        try:
+            filename = filename.key
+        except:
+            pass
+    snapshot_use_start_time = False
+    if 'snapshot_use_start_time' in kwargs:
+        snapshot_use_start_time = kwargs['snapshot_use_start_time']
+
+    # parse the filename
+    name = parse_name(filename, snapshot_use_start_time=snapshot_use_start_time)
+
+    # has_date is used by default
+    if 'has_date' not in kwargs:
+        kwargs['has_date'] = True
+
+    available_criteria = get_criteria()
+
+    for argument_criteria in kwargs.keys():
+        if argument_criteria in available_criteria:
+            this_criteria = available_criteria[argument_criteria]()
+            this_criteria.set_argument(kwargs[argument_criteria])
+            if 'debug' in kwargs and kwargs['debug']:
+                this_criteria.debugMode = True
+            if not this_criteria.test(filename, name):
+                return False
+
     return True
 
 
