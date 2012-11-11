@@ -218,7 +218,8 @@ def list_logs(directory='./', items=None, s3bucket=None, aws_access_key_id=None,
     List all of the log files in the directory that meet the criteria.
 
     This method is the same as `list_archives` except that it will only look at things that meet the `is_log`
-    method. This also supports AWS connections.
+    method. This also supports AWS connections, but only S3 items (EC2Snapshots will likely not end with ".log"
+    which is the criteria used for `is_log`)
 
     See meets_criteria() for list of kwargs that can be used to limit the results.
     """
