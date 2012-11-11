@@ -91,41 +91,47 @@ class TestRotationFunctions(unittest.TestCase):
         archives = rotatelib.list_archives(items=items, has_date=False)
         self.assertEqual(len(archives), 1)  # this should only return test.zip
 
+    def testMultiplePatterns(self):
+        self.assertTrue(rotatelib.meets_criteria('./', 'test20121110.zip', before=datetime.datetime(2013, 1, 1)))
+
     def testListArchiveWithHasDateCriteria(self):
         items = ['test.zip', 'test20121110.zip']
+        # this is the same as has_date = True
         archives = rotatelib.list_archives(items=items)
         self.assertEqual(len(archives), 1)
         archives = rotatelib.list_archives(items=items, has_date=True)
         self.assertEqual(len(archives), 1)
+        # set has_date to false to get items without their date
         archives = rotatelib.list_archives(items=items, has_date=False)
         self.assertEqual(len(archives), 2)
 
-    def testNewCriteriaHasDate(self):
+    def testMeetsCriteriaHasDate(self):
         items = ['test.zip', 'test20121110.zip']
-        self.assertTrue(rotatelib.meets_criteria2('./', items[0]))
-        self.assertTrue(rotatelib.meets_criteria2('./', items[0], has_date=True))
-        self.assertFalse(rotatelib.meets_criteria2('./', items[0], has_date=False))
+        self.assertFalse(rotatelib.meets_criteria('./', items[0]))
+        self.assertFalse(rotatelib.meets_criteria('./', items[0], has_date=True))
+        self.assertTrue(rotatelib.meets_criteria('./', items[0], has_date=False))
+        self.assertTrue(rotatelib.meets_criteria('./', items[1], has_date=True))
 
-    def testNewCriteriaPattern(self):
+    def testMeetsCriteriaPattern(self):
         items = ['test.zip', 'test20121110.zip']
-        self.assertTrue(rotatelib.meets_criteria2('./', items[0], pattern=r'^test'))
-        self.assertFalse(rotatelib.meets_criteria2('./', items[0], pattern=r'^steve'))
+        self.assertTrue(rotatelib.meets_criteria('./', items[1], pattern=r'^test'))
+        self.assertFalse(rotatelib.meets_criteria('./', items[1], pattern=r'^steve'))
 
     def testNewCriteriaStartswith(self):
         items = ['test.zip', 'test20121110.zip']
-        self.assertTrue(rotatelib.meets_criteria2('./', items[0], startswith='test'))
-        self.assertTrue(rotatelib.meets_criteria2('./', items[0], startswith=['test', 'steve']))
-        self.assertTrue(rotatelib.meets_criteria2('./', items[0], startswith=['steve', 'test']))
-        self.assertFalse(rotatelib.meets_criteria2('./', items[0], startswith='steve'))
-        self.assertFalse(rotatelib.meets_criteria2('./', items[0], startswith=['steve']))
+        self.assertTrue(rotatelib.meets_criteria('./', items[1], startswith='test'))
+        self.assertTrue(rotatelib.meets_criteria('./', items[1], startswith=['test', 'steve']))
+        self.assertTrue(rotatelib.meets_criteria('./', items[1], startswith=['steve', 'test']))
+        self.assertFalse(rotatelib.meets_criteria('./', items[1], startswith='steve'))
+        self.assertFalse(rotatelib.meets_criteria('./', items[1], startswith=['steve']))
 
     def testNewCriteriaExceptStartswith(self):
         items = ['test.zip', 'test20121110.zip']
-        self.assertFalse(rotatelib.meets_criteria2('./', items[0], except_startswith='test'))
-        self.assertFalse(rotatelib.meets_criteria2('./', items[0], except_startswith=['test', 'steve']))
-        self.assertFalse(rotatelib.meets_criteria2('./', items[0], except_startswith=['steve', 'test']))
-        self.assertTrue(rotatelib.meets_criteria2('./', items[0], except_startswith='steve'))
-        self.assertTrue(rotatelib.meets_criteria2('./', items[0], except_startswith=['steve']))
+        self.assertFalse(rotatelib.meets_criteria('./', items[1], except_startswith='test'))
+        self.assertFalse(rotatelib.meets_criteria('./', items[1], except_startswith=['test', 'steve']))
+        self.assertFalse(rotatelib.meets_criteria('./', items[1], except_startswith=['steve', 'test']))
+        self.assertTrue(rotatelib.meets_criteria('./', items[1], except_startswith='steve'))
+        self.assertTrue(rotatelib.meets_criteria('./', items[1], except_startswith=['steve']))
 
     def testListArchiveWithBeforeCriteria(self):
         items = ['test.txt', 'test2009-06-15T11.zip', 'test2009-06-20T01.bz2', 'test.zip']
@@ -197,7 +203,7 @@ class TestRotationFunctions(unittest.TestCase):
     def testListArchiveWithExceptDayCriteria(self):
         items = ['test.txt', 'test2009-06-15T11.zip', 'test2009-06-20T01.bz2', 'test.zip']
         # before criteria will only yield a pass for test test2009-06-15T11.zip, but except_day should cause that to fail
-        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), except_day=15, debug=True)
+        archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), except_day=15)
         self.assertEqual(len(archives), 0)
         archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), except_day=1)
         self.assertEqual(len(archives), 1)
@@ -206,25 +212,25 @@ class TestRotationFunctions(unittest.TestCase):
         archives = rotatelib.list_archives(items=items, before=datetime.datetime(2009, 6, 20), except_day=[1, 12])
         self.assertEqual(len(archives), 1)
 
-    def testListArchiveWithStartswithCriteria(self):
-        items = ['test.txt', 'test2009-06-15T11.zip', 'test2009-06-20T01.bz2', 'test.zip']
-        archives = rotatelib.list_archives(items=items, startswith='test')
-        self.assertEqual(len(archives), 2)
-        archives = rotatelib.list_archives(items=items, startswith=['test', 'asdf'])
-        self.assertEqual(len(archives), 2)
-        archives = rotatelib.list_archives(items=items, startswith='asdf')
-        self.assertEqual(len(archives), 0)
-        archives = rotatelib.list_archives(items=items, startswith='test', before=datetime.datetime(2009, 6, 21))
-        self.assertEqual(len(archives), 2)
-        archives = rotatelib.list_archives(items=items, startswith='test', before=datetime.datetime(2009, 6, 20))
-        self.assertEqual(len(archives), 1)
+    # def testListArchiveWithStartswithCriteria(self):
+    #     items = ['test.txt', 'test2009-06-15T11.zip', 'test2009-06-20T01.bz2', 'test.zip']
+    #     archives = rotatelib.list_archives(items=items, startswith='test')
+    #     self.assertEqual(len(archives), 2)
+    #     archives = rotatelib.list_archives(items=items, startswith=['test', 'asdf'])
+    #     self.assertEqual(len(archives), 2)
+    #     archives = rotatelib.list_archives(items=items, startswith='asdf')
+    #     self.assertEqual(len(archives), 0)
+    #     archives = rotatelib.list_archives(items=items, startswith='test', before=datetime.datetime(2009, 6, 21))
+    #     self.assertEqual(len(archives), 2)
+    #     archives = rotatelib.list_archives(items=items, startswith='test', before=datetime.datetime(2009, 6, 20))
+    #     self.assertEqual(len(archives), 1)
 
-    def testListArchiveWithExceptStartswithCriteria(self):
-        items = ['test.txt', 'test2009-06-15T11.zip', 'test2009-06-20T01.bz2', 'test.zip']
-        archives = rotatelib.list_archives(items=items, except_startswith='test')
-        self.assertEqual(len(archives), 0)
-        archives = rotatelib.list_archives(items=items, except_startswith='asdf')
-        self.assertEqual(len(archives), 2)
+    # def testListArchiveWithExceptStartswithCriteria(self):
+    #     items = ['test.txt', 'test2009-06-15T11.zip', 'test2009-06-20T01.bz2', 'test.zip']
+    #     archives = rotatelib.list_archives(items=items, except_startswith='test')
+    #     self.assertEqual(len(archives), 0)
+    #     archives = rotatelib.list_archives(items=items, except_startswith='asdf')
+    #     self.assertEqual(len(archives), 2)
 
 
 class TestDBRotationFunctions(unittest.TestCase):

@@ -141,7 +141,8 @@ def is_archive(fn):
 
 def is_backup_table(table):
     """
-    Determines if the table name is an archive or not. See parse_name()
+    Determines if the table name is an archive or not. See parse_name(). Essentially
+    the table name must have a date portion.
 
     Returns True/False
     """
@@ -417,15 +418,21 @@ def meets_criteria2(directory, filename, **kwargs):
     if 'has_date' not in kwargs:
         kwargs['has_date'] = True
 
+    if 'debug' not in kwargs:
+        kwargs['debug'] = False
+
     available_criteria = get_criteria()
 
     for argument_criteria in kwargs.keys():
         if argument_criteria in available_criteria:
+            if kwargs['debug']:
+                print "Testing against %s" % argument_criteria
             this_criteria = available_criteria[argument_criteria]()
             this_criteria.set_argument(kwargs[argument_criteria])
-            if 'debug' in kwargs and kwargs['debug']:
+            if kwargs['debug']:
                 this_criteria.debugMode = True
             if not this_criteria.test(filename, name):
+                # failed the test, we don't need to continue
                 return False
 
     return True
