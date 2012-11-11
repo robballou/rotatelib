@@ -97,6 +97,9 @@ class EC2TestCase(unittest.TestCase):
 
 
 class TestRotatelibFunctionsWithEC2(EC2TestCase):
+    """
+    EC2 Tests
+    """
     def testListArchives(self):
         archives = rotatelib.list_archives(ec2snapshots=True, startswith="rotatelib")
         self.assertEqual(len(archives), 1)
