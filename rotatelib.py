@@ -434,7 +434,7 @@ def remove_items(directory='./', items=None, db=None, s3bucket=None, ec2snapshot
         for item in items:
             try:
                 item.delete()
-            except Exception, e:
+            except Exception:
                 pass
     else:
         # Database items
