@@ -150,6 +150,8 @@ def list_archives(directory='./', items=None, s3bucket=None, ec2snapshots=None, 
     If `s3bucket` is used, we'll connect to the S3 account/bucket to look for items. If used in
     conjuction with `directory`, that will be used as the file prefix.
 
+    If `ec2snapshots` is used, we'll connect to AWS account and look for snapshots.
+
     See meets_criteria() for list of kwargs that can be used to limit the results.
     """
 
@@ -215,8 +217,8 @@ def list_logs(directory='./', items=None, s3bucket=None, aws_access_key_id=None,
     """
     List all of the log files in the directory that meet the criteria.
 
-    This method is the same as list_archives except that it will only look at things that meet the is_log
-    method. This also supports S3 connections (see connect_to_s3()).
+    This method is the same as `list_archives` except that it will only look at things that meet the `is_log`
+    method. This also supports AWS connections.
 
     See meets_criteria() for list of kwargs that can be used to limit the results.
     """
