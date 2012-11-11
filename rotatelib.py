@@ -42,7 +42,6 @@ __version__ = '0.6'
 __license__ = 'MIT'
 
 import collections
-import optparse
 import re
 import datetime
 import os
@@ -54,10 +53,11 @@ try:
 except ImportError, e:
     pass
 
+
 def connect_to_ec2(aws_access_key_id, aws_secret_access_key):
     """
     Connect to the ec2 account
-    
+
     Using the boto library, we'll connect to the S3 account. If aws_access_key_id and
     aws_secret_access_key are None, we'll check out the environment variables. If no
     authentication information is found, you'll get an Exception.
@@ -72,10 +72,11 @@ def connect_to_ec2(aws_access_key_id, aws_secret_access_key):
         aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
     return EC2Connection(aws_access_key_id, aws_secret_access_key)
 
+
 def connect_to_s3(aws_access_key_id, aws_secret_access_key):
     """
     Connect to the S3 account
-    
+
     Using the boto library, we'll connect to the S3 account. If aws_access_key_id and
     aws_secret_access_key are None, we'll check out the environment variables. If no
     authentication information is found, you'll get an Exception.
@@ -90,16 +91,17 @@ def connect_to_s3(aws_access_key_id, aws_secret_access_key):
         aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
     return S3Connection(aws_access_key_id, aws_secret_access_key)
 
+
 def is_archive(fn):
     """
     Determines if the requested filename is an archive or not. See parse_name()
-    
+
     Returns True/False
     """
     # check if this is an ec2 object
     if isinstance(fn, Snapshot):
         return True
-    
+
     extensions = ['.gz', '.bz2', '.zip', '.tgz']
     try:
         fn = fn.key
@@ -110,10 +112,11 @@ def is_archive(fn):
         return True
     return False
 
+
 def is_backup_table(table):
     """
     Determines if the table name is an archive or not. See parse_name()
-    
+
     Returns True/False
     """
     try:
@@ -122,10 +125,11 @@ def is_backup_table(table):
         raise Exception('Could not parse the table name <%s>: %s' % (table, e))
     return parsed['date'] != None
 
+
 def is_log(fn):
     """
     Determines if the requested filename is an archive or not
-    
+
     Returns True/False
     """
     extensions = ['.log']
@@ -134,20 +138,21 @@ def is_log(fn):
         return True
     return False
 
+
 def list_archives(directory='./', items=None, s3bucket=None, ec2snapshots=None, aws_access_key_id=None, aws_secret_access_key=None, **kwargs):
     """
     List all of the archive files in the directory that meet the criteria (see meets_criteria()). This also
     supports S3 connections (see connect_to_s3()).
-    
+
     If `directory` is used without `s3bucket`, then we'll use that as the directory to search for
     archives.
-    
+
     If `s3bucket` is used, we'll connect to the S3 account/bucket to look for items. If used in
     conjuction with `directory`, that will be used as the file prefix.
-    
+
     See meets_criteria() for list of kwargs that can be used to limit the results.
     """
-    
+
     if not items:
         if not s3bucket and not ec2snapshots:
             # regular file system request
@@ -157,10 +162,11 @@ def list_archives(directory='./', items=None, s3bucket=None, ec2snapshots=None, 
             try:
                 s3 = connect_to_s3(aws_access_key_id, aws_secret_access_key)
                 bucket = s3.get_bucket(s3bucket)
-                if directory == './': directory = ''
+                if directory == './':
+                    directory = ''
                 items = [item for item in bucket.list(directory)]
             except NameError, e:
-                raise Exception('To use the S3 library, you must have the boto python library: %s' % s)
+                raise Exception('To use the S3 library, you must have the boto python library: %s' % e)
         elif ec2snapshots and not s3bucket:
             # ec2 request
             try:
@@ -168,18 +174,19 @@ def list_archives(directory='./', items=None, s3bucket=None, ec2snapshots=None, 
                 items = ec2.get_all_snapshots(owner='self')
             except NameError, e:
                 raise Exception('To use the EC2 library, you must have the boto python library: %s' % e)
-    
+
     items = [archive for archive in items if is_archive(archive) and meets_criteria(directory, archive, **kwargs)]
     return items
+
 
 def list_backup_tables(db, db_type=None, **kwargs):
     """
     Find backed up tables in the database
-    
+
     The `db` param should be the database object for the database type. By default we assume that this is
     a MySQL database, but we also support sqlite. To trigger for a different database type, just specify
     the `db_type` argument.
-    
+
     See meets_criteria() for list of kwargs that can be used to limit the results.
     """
     cur = db.cursor()
@@ -196,19 +203,21 @@ def list_backup_tables(db, db_type=None, **kwargs):
             tables = [table[1] for table in cur.fetchall()]
         except Exception, e:
             raise e
-    
-    if not tables: raise Exception('Could not figure out the database type or get a list of tables')
-    
+
+    if not tables:
+        raise Exception('Could not figure out the database type or get a list of tables')
+
     backup_tables = [table for table in tables if is_backup_table(table) and meets_criteria(db, table, **kwargs)]
     return backup_tables
+
 
 def list_logs(directory='./', items=None, s3bucket=None, aws_access_key_id=None, aws_secret_access_key=None, **kwargs):
     """
     List all of the log files in the directory that meet the criteria.
-    
+
     This method is the same as list_archives except that it will only look at things that meet the is_log
     method. This also supports S3 connections (see connect_to_s3()).
-    
+
     See meets_criteria() for list of kwargs that can be used to limit the results.
     """
     if not items:
@@ -220,25 +229,28 @@ def list_logs(directory='./', items=None, s3bucket=None, aws_access_key_id=None,
             try:
                 s3 = connect_to_s3(aws_access_key_id, aws_secret_access_key)
                 bucket = s3.get_bucket(s3bucket)
-                if directory == './': directory = ''
+                if directory == './':
+                    directory = ''
                 items = [item for item in bucket.list(directory)]
             except NameError, e:
-                raise Exception('To use the S3 library, you must have the boto python library')
+                raise Exception('To use the S3 library, you must have the boto python library: %s', e)
     items = [archive for archive in items if is_log(archive) and meets_criteria(directory, archive, **kwargs)]
     return items
+
 
 def _make_list(item):
     if not isinstance(item, collections.Iterable):
         item = [item]
     return item
 
+
 def meets_criteria(directory, filename, **kwargs):
     """
     Check the filename to see if it meets the criteria for this query.
-    
+
     Note: the has_date criteria is "on" by default. So if you don't specify that as "off" then
     this will only pass items that have a date in the filename!
-    
+
     Current criteria:
         after
         before
@@ -249,7 +261,7 @@ def meets_criteria(directory, filename, **kwargs):
         hour
         pattern (regex)
         startswith
-    
+
     Other options:
         debug
         snapshot_use_start_time
@@ -262,17 +274,18 @@ def meets_criteria(directory, filename, **kwargs):
         except:
             pass
     snapshot_use_start_time = False
-    if kwargs.has_key('snapshot_use_start_time'): snapshot_use_start_time = kwargs['snapshot_use_start_time']
+    if 'snapshot_use_start_time' in kwargs:
+        snapshot_use_start_time = kwargs['snapshot_use_start_time']
     name = parse_name(filename, snapshot_use_start_time=snapshot_use_start_time)
     # check that we parsed a date
-    if ((kwargs.has_key('has_date') and kwargs['has_date'] == True) or not kwargs.has_key('has_date')) and not name['date']:
+    if (('has_date' in kwargs and kwargs['has_date'] == True) or not 'has_date' in kwargs) and not name['date']:
         return False
     # name must match the pattern
-    if kwargs.has_key('pattern'):
+    if 'pattern' in kwargs:
         if not re.match(kwargs['pattern'], filename):
             return False
     # name must start with the string
-    if kwargs.has_key('startswith'):
+    if 'startswith' in kwargs:
         startswith = _make_list(kwargs['startswith'])
         passes = False
         for s in startswith:
@@ -282,7 +295,7 @@ def meets_criteria(directory, filename, **kwargs):
         if not passes:
             return False
     # name must not start with the string
-    if kwargs.has_key('except_startswith'):
+    if 'except_startswith' in kwargs:
         startswith = _make_list(kwargs['except_startswith'])
         passes = False
         for s in startswith:
@@ -292,53 +305,60 @@ def meets_criteria(directory, filename, **kwargs):
         if passes:
             return False
     if name['date']:
-        if kwargs.has_key('before'):
+        if 'before' in kwargs:
             # check if this is a timedelta object
             try:
                 if kwargs['before'].days:
                     kwargs['before'] = datetime.datetime.today() - kwargs['before']
-            except AttributeError, e:
+            except AttributeError:
                 pass
-            if kwargs.has_key('debug'):
+            if 'debug' in kwargs:
                 print "Date: %s" % name['date']
                 print "Before: %s" % kwargs['before']
             if name['date'] >= kwargs['before']:
-                if kwargs.has_key('debug'): print "Failed Before"
+                if 'debug' in kwargs:
+                    print "Failed Before"
                 return False
-        if kwargs.has_key('after'):
+        if 'after' in kwargs:
             try:
                 if kwargs['after'].days:
                     kwargs['after'] = datetime.datetime.today() - kwargs['after']
-            except AttributeError, e:
+            except AttributeError:
                 pass
             if name['date'] <= kwargs['after']:
-                if kwargs.has_key('debug'): print "Failed After"
+                if 'debug' in kwargs:
+                    print "Failed After"
                 return False
-        if kwargs.has_key('hour'):
+        if 'hour' in kwargs:
             kwargs['hour'] = _make_list(kwargs['hour'])
             # ignore any hour besides the requested one
             if name['date'].hour not in kwargs['hour']:
-                if kwargs.has_key('debug'): print "Failed Hour"
+                if 'debug' in kwargs:
+                    print "Failed Hour"
                 return False
-        if kwargs.has_key('except_hour'):
+        if 'except_hour' in kwargs:
             kwargs['except_hour'] = _make_list(kwargs['except_hour'])
             # ignore the specified hour
             if name['date'].hour in kwargs['except_hour']:
-                if kwargs.has_key('debug'): print "Failed Except Hour"
+                if 'debug' in kwargs:
+                    print "Failed Except Hour"
                 return False
-        if kwargs.has_key('day'):
+        if 'day' in kwargs:
             kwargs['day'] = _make_list(kwargs['day'])
             # ignore any day besides the requested on
             if name['date'].day not in kwargs['day']:
-                if kwargs.has_key('debug'): print "Failed Day"
+                if 'debug' in kwargs:
+                    print "Failed Day"
                 return False
-        if kwargs.has_key('except_day'):
+        if 'except_day' in kwargs:
             kwargs['except_day'] = _make_list(kwargs['except_day'])
             # ignore any day besides the requested on
             if name['date'].day in kwargs['except_day']:
-                if kwargs.has_key('debug'): print "Failed Except Day"
+                if 'debug' in kwargs:
+                    print "Failed Except Day"
                 return False
     return True
+
 
 def parse_name(fn, debug=False, snapshot_use_start_time=False):
     """
@@ -357,7 +377,7 @@ def parse_name(fn, debug=False, snapshot_use_start_time=False):
             fn = fn.key
         except:
             pass
-    
+
     item = {'name': fn, 'date': None}
     # check YYYY-MM-DDTHH:MM:SS
     if re.search(r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):?(\d{2}):?(\d{2})?', fn):
@@ -374,7 +394,7 @@ def parse_name(fn, debug=False, snapshot_use_start_time=False):
     elif re.search(r'(\d{4})-?(\d{2})-?(\d{2})', fn):
         result = re.findall(r'(\d{4})-?(\d{2})-?(\d{2})', fn)[0]
         item['date'] = datetime.datetime(int(result[0]), int(result[1]), int(result[2]))
-    
+
     if not item['date'] and o:
         try:
             date = o.start_time
@@ -383,35 +403,42 @@ def parse_name(fn, debug=False, snapshot_use_start_time=False):
                 item['date'] = datetime.datetime(int(result[0]), int(result[1]), int(result[2]), int(result[3]), int(result[4]))
         except:
             pass
-    
+
     if debug:
         print item
-    
+
     return item
+
 
 def remove_items(directory='./', items=None, db=None, s3bucket=None, ec2snapshots=None, aws_access_key_id=None, aws_secret_access_key=None):
     """
     Delete the items in the directory/items list. See connect_to_s3() for information about using this method
     with S3 accounts.
     """
-    if not items: return
+    if not items:
+        return
+
     if not db and not s3bucket and not ec2snapshots:
+        # OS level items
         for item in items:
             this_item = os.path.join(directory, item)
             os.remove(this_item)
     elif not db and s3bucket and not ec2snapshots:
+        # S3 items
         s3 = connect_to_s3(aws_access_key_id, aws_secret_access_key)
         bucket = s3.get_bucket(s3bucket)
         for item in items:
             bucket.delete_key(item.key)
     elif not db and not s3bucket and ec2snapshots:
+        # EC2 snapshots
         ec2 = connect_to_ec2(aws_access_key_id, aws_secret_access_key)
         for item in items:
             item.delete()
     else:
+        # Database items
         cur = db.cursor()
         for item in items:
             try:
                 cur.execute("DROP TABLE %s" % item)
-            except Exception, e:
+            except Exception:
                 pass
