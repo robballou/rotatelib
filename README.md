@@ -1,6 +1,8 @@
 # Rotatelib
 
-Version: 0.6
+Version: 0.7
+
+The refactor.criteria branch is part of a push for version 1.0. Criteria will be removed from one massive `meets_criteria` function and put into a submodule using a more OOP approach. This will allow easier time for adding new criteria. Also it will allow developers to create their own criteria.
 
 Module for assisting in querying the file system, databases, or Amazon Web Services (AWS) for backups/archives to rotate.
 
