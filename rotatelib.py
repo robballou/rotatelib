@@ -432,7 +432,10 @@ def remove_items(directory='./', items=None, db=None, s3bucket=None, ec2snapshot
     elif not db and not s3bucket and ec2snapshots:
         # EC2 snapshots
         for item in items:
-            item.delete()
+            try:
+                item.delete()
+            except Exception, e:
+                pass
     else:
         # Database items
         cur = db.cursor()
