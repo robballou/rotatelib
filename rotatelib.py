@@ -431,7 +431,6 @@ def remove_items(directory='./', items=None, db=None, s3bucket=None, ec2snapshot
             bucket.delete_key(item.key)
     elif not db and not s3bucket and ec2snapshots:
         # EC2 snapshots
-        ec2 = connect_to_ec2(aws_access_key_id, aws_secret_access_key)
         for item in items:
             item.delete()
     else:
