@@ -1,8 +1,12 @@
 # Rotatelib
 
-Version: 0.7
+Version: **1.0rc1**
 
-The refactor.criteria branch is part of a push for version 1.0. Criteria will be removed from one massive `meets_criteria` function and put into a submodule using a more OOP approach. This will allow easier time for adding new criteria. Also it will allow developers to create their own criteria.
+**Important: as of version 1.0, rotatelib will now be a module instead of just a python script. This may require that you re-install the module.**
+
+Criteria will be removed from one massive `meets_criteria` function and put into a submodule using a more OOP approach. This will allow easier time for adding new criteria. Also it will allow developers to create their own criteria.
+
+## About
 
 Module for assisting in querying the file system, databases, or Amazon Web Services (AWS) for backups/archives to rotate.
 
@@ -47,8 +51,7 @@ You may also now give it database connections to work with:
 
 ## S3 example
 
-If you have the [boto python library][1] installed, you can even access items in an S3 
-bucket:
+If you have the [boto python library][1] installed, you can even access items in an S3 bucket:
 
     import datetime
     import rotatelib
@@ -97,8 +100,7 @@ to use the `start_time`, you can use the `snapshot_use_start_time` option.
     # list all archive items that are older than 5 days, using start_time
     items = rotatelib.list_archives(ec2snapshots=True, before=datetime.timedelta(5), snapshot_use_start_time=True)
 
-Note that the EC2 option will only look at snapshots owned by the account for the credentials that are 
-used.
+Note that the EC2 option will only look at snapshots owned by the account for the credentials that are used.
 
 ## Criteria
 
@@ -110,17 +112,20 @@ To help query for the items you want, there are a number of criteria tests:
   - except_day (int or list of ints)
   - except_hour (int or list of ints)
   - except_startswith (string or list of strings)
-  - has_date (datetime)
+  - except_year (int or list of ints)
+  - has_date (true/false)
   - hour (int or list of ints)
   - startswith (string or list of strings)
   - pattern (regex)
+  - year (int or list of ints)
 
-**New in version 0.6:** `startswith` and `except_startswith` were added.  
+**New in version 1.0:** `year` and `except_year` were added; criteria were refactored into their own class-based approach. This may also require you to re-install "rotatelib.py" is now a module.
+**New in version 0.6:** `startswith` and `except_startswith` were added.
 **New in version 0.2:** `day` and `except_day` were added. `day`, `hour`, `except_day`, and `except_hour` all accept lists as well.
 
 ## License
 
-Copyright (c) 2011 Rob Ballou
+Copyright (c) 2012 Rob Ballou
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

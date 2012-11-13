@@ -276,129 +276,21 @@ def _make_list(item):
 
 def meets_criteria(directory, filename, **kwargs):
     """
-    Check the filename to see if it meets the criteria for this query.
-
-    Note: the has_date criteria is "on" by default. So if you don't specify that as "off" then
-    this will only pass items that have a date in the filename!
-
     Current criteria:
-        after
-        before
-        day
-        exceot_day
-        except_hour
-        has_date
-        hour
-        pattern (regex)
-        startswith
 
-    Other options:
-        debug
-        snapshot_use_start_time
+      - after (datetime or timedelta)
+      - before (datetime or timedelta)
+      - day (int or list of ints)
+      - except_day (int or list of ints)
+      - except_hour (int or list of ints)
+      - except_startswith (string or list of strings)
+      - except_year (int or list of ints)
+      - has_date (true/false)
+      - hour (int or list of ints)
+      - startswith (string or list of strings)
+      - pattern (regex)
+      - year (int or list of ints)
     """
-    return meets_criteria2(directory, filename, **kwargs)
-    # figure out the filename
-    try:
-        filename = filename.description
-    except:
-        try:
-            filename = filename.key
-        except:
-            pass
-    snapshot_use_start_time = False
-    if 'snapshot_use_start_time' in kwargs:
-        snapshot_use_start_time = kwargs['snapshot_use_start_time']
-
-    # parse the filename
-    name = parse_name(filename, snapshot_use_start_time=snapshot_use_start_time)
-
-    # get the available criteria
-    # criteria = get_criteria()
-
-    # check that we parsed a date
-    if (('has_date' in kwargs and kwargs['has_date'] == True) or not 'has_date' in kwargs) and not name['date']:
-        return False
-    # name must match the pattern
-    if 'pattern' in kwargs:
-        if not re.match(kwargs['pattern'], filename):
-            return False
-    # name must start with the string
-    if 'startswith' in kwargs:
-        startswith = _make_list(kwargs['startswith'])
-        passes = False
-        for s in startswith:
-            if filename.startswith(s):
-                passes = True
-                break
-        if not passes:
-            return False
-    # name must not start with the string
-    if 'except_startswith' in kwargs:
-        startswith = _make_list(kwargs['except_startswith'])
-        passes = False
-        for s in startswith:
-            if filename.startswith(s):
-                passes = True
-                break
-        if passes:
-            return False
-    if name['date']:
-        if 'before' in kwargs:
-            # check if this is a timedelta object
-            try:
-                if kwargs['before'].days:
-                    kwargs['before'] = datetime.datetime.today() - kwargs['before']
-            except AttributeError:
-                pass
-            if 'debug' in kwargs:
-                print "Date: %s" % name['date']
-                print "Before: %s" % kwargs['before']
-            if name['date'] >= kwargs['before']:
-                if 'debug' in kwargs:
-                    print "Failed Before"
-                return False
-        if 'after' in kwargs:
-            try:
-                if kwargs['after'].days:
-                    kwargs['after'] = datetime.datetime.today() - kwargs['after']
-            except AttributeError:
-                pass
-            if name['date'] <= kwargs['after']:
-                if 'debug' in kwargs:
-                    print "Failed After"
-                return False
-        if 'hour' in kwargs:
-            kwargs['hour'] = _make_list(kwargs['hour'])
-            # ignore any hour besides the requested one
-            if name['date'].hour not in kwargs['hour']:
-                if 'debug' in kwargs:
-                    print "Failed Hour"
-                return False
-        if 'except_hour' in kwargs:
-            kwargs['except_hour'] = _make_list(kwargs['except_hour'])
-            # ignore the specified hour
-            if name['date'].hour in kwargs['except_hour']:
-                if 'debug' in kwargs:
-                    print "Failed Except Hour"
-                return False
-        if 'day' in kwargs:
-            kwargs['day'] = _make_list(kwargs['day'])
-            # ignore any day besides the requested on
-            if name['date'].day not in kwargs['day']:
-                if 'debug' in kwargs:
-                    print "Failed Day"
-                return False
-        if 'except_day' in kwargs:
-            kwargs['except_day'] = _make_list(kwargs['except_day'])
-            # ignore any day besides the requested on
-            if name['date'].day in kwargs['except_day']:
-                if 'debug' in kwargs:
-                    print "Failed Except Day"
-                return False
-    return True
-
-
-def meets_criteria2(directory, filename, **kwargs):
     # figure out the filename
     try:
         filename = filename.description
