@@ -238,6 +238,15 @@ class TestRotationFunctions(unittest.TestCase):
         archives = rotatelib.list_archives(items=items, except_startswith='asdf')
         self.assertEqual(len(archives), 2)
 
+    def testMeetsCriteriaWithYearCriteria(self):
+        self.assertTrue(rotatelib.meets_criteria("./", "test20120101.zip", year=2012))
+        self.assertFalse(rotatelib.meets_criteria("./", "test20110101.zip", year=2012))
+        self.assertTrue(rotatelib.meets_criteria("./", "test20110101.zip", year=[2012, 2011]))
+
+    def testMeetsCriteriaWithExceptYearCriteria(self):
+        self.assertFalse(rotatelib.meets_criteria("./", "test20120101.zip", except_year=2012))
+        self.assertTrue(rotatelib.meets_criteria("./", "test20110101.zip", except_year=2012))
+
 
 class TestDBRotationFunctions(unittest.TestCase):
     def create_tables(self, db, tables):

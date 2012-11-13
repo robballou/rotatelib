@@ -163,6 +163,22 @@ class ExceptHour(Hour):
     def test(self, filename, parsed_name):
         return not super(ExceptHour, self).test(filename, parsed_name)
 
+
+class Year(ListArgumentCriteria):
+    def test(self, filename, parsed_name):
+        if not parsed_name['date']:
+            return False
+        if parsed_name['date'].year in self.argument:
+            return True
+        return False
+
+
+class ExceptYear(Year):
+    criteria_name = "except_year"
+
+    def test(self, filename, parsed_name):
+        return not super(ExceptYear, self).test(filename, parsed_name)
+
 # ---------------------------------------------------------------------
 # OTHER CRITERIA
 # ---------------------------------------------------------------------
