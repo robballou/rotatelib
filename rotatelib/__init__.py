@@ -414,27 +414,32 @@ def meets_criteria2(directory, filename, **kwargs):
     # parse the filename
     name = parse_name(filename, snapshot_use_start_time=snapshot_use_start_time)
 
-    # has_date is used by default
+    # has_date is used by default, so make sure it is on
     if 'has_date' not in kwargs:
         kwargs['has_date'] = True
 
+    # if debug is not there, explicitly set it off
     if 'debug' not in kwargs:
         kwargs['debug'] = False
 
     available_criteria = get_criteria()
 
+    if kwargs['debug']:
+        criteria_for_this_item = set(available_criteria).intersection(set(kwargs.keys()))
+        print "\n\tFilename.: %s" % filename
+        print "\tDate.....: %s" % name['date']
+        print "\tTests....: %s" % criteria_for_this_item
+        for ct in criteria_for_this_item:
+            print "\t\t%s: %s" % (ct, kwargs[ct])
+
     for argument_criteria in kwargs.keys():
         if argument_criteria in available_criteria:
-            if kwargs['debug']:
-                print "Testing against %s" % argument_criteria
             this_criteria = available_criteria[argument_criteria]()
-            this_criteria.set_argument(kwargs[argument_criteria])
             if kwargs['debug']:
                 this_criteria.debugMode = True
+            this_criteria.set_argument(kwargs[argument_criteria])
             if not this_criteria.test(filename, name):
-                # failed the test, we don't need to continue
                 return False
-
     return True
 
 

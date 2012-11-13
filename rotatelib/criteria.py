@@ -6,10 +6,15 @@ import inspect
 # ---------------------------------------------------------------------
 # PARENT/SUPERCLASS CRITERIA
 # ---------------------------------------------------------------------
+
+
 class BaseCriteria(object):
+    """
+    The base criteria used for all criteria
+    """
     criteria_name = None
 
-    def __init__(self, debug = False):
+    def __init__(self, debug=False):
         self.debugMode = False
 
     def debug(self, message):
@@ -21,15 +26,11 @@ class BaseCriteria(object):
         if not self.debugMode:
             return
 
-        print "======\nArguments (%s):" % (self.__class__.__name__)
-        print "Filename:"
-        print filename
-        print "Parsed name:"
-        print parsed_name
-        print "Argument:"
-        print self.argument
-
     def make_list(self, item):
+        """
+        Convert the item to a list, if it isn't one. Useful in cases where
+        the criteria needs to act on multiple items.
+        """
         if isinstance(item, basestring) or not isinstance(item, collections.Iterable):
             item = [item]
         return item
@@ -40,6 +41,7 @@ class BaseCriteria(object):
     def test(self, filename, parsed_name):
         return False
 
+
 class ListArgumentCriteria(BaseCriteria):
     def set_argument(self, argument):
         self.argument = self.make_list(argument)
@@ -47,6 +49,8 @@ class ListArgumentCriteria(BaseCriteria):
 # ---------------------------------------------------------------------
 # DATE CRITERIA
 # ---------------------------------------------------------------------
+
+
 class DateCriteria(BaseCriteria):
     def set_argument(self, argument):
         self.argument = argument
@@ -62,8 +66,8 @@ class DateCriteria(BaseCriteria):
         # the name does not contain a parseable date
         if not parsed_name['date']:
             return False
-
         return True
+
 
 class After(DateCriteria):
     def test(self, filename, parsed_name):
@@ -75,13 +79,13 @@ class After(DateCriteria):
             return False
         return True
 
+
 class Before(DateCriteria):
     def test(self, filename, parsed_name):
         if not super(Before, self).test(filename, parsed_name):
             return False
 
         if self.argument and parsed_name['date'] >= self.argument:
-            self.debug("FAILED before criteria")
             return False
         return True
 
@@ -90,23 +94,27 @@ class Day(ListArgumentCriteria):
     def test(self, filename, parsed_name):
         self.debugArguments(filename, parsed_name)
 
-        # ignore any day besides the requested on
-        if parsed_name['date'] and parsed_name['date'].day not in self.argument:
-            self.debug("FAILED day criteria")
+        if not parsed_name['date']:
             return False
-        self.debug("PASSES day criteria")
-        return True
+
+        # ignore any day besides the requested on
+        if parsed_name['date'].day in self.argument:
+            return True
+        return False
 
 
 class ExceptDay(Day):
+    """
+    Check the day of the item is not in the list
+    """
     criteria_name = "except_day"
+
     def test(self, filename, parsed_name):
-        meets_day = super(Day, self).test(filename, parsed_name)
+        self.debugArguments(filename, parsed_name)
+        meets_day = super(ExceptDay, self).test(filename, parsed_name)
         if meets_day:
-            self.debug("FAILED except_day criteria")
-        else:
-            self.debug("PASSES except_day criteria")
-        return not meets_day
+            return False
+        return True
 
 
 class HasDate(BaseCriteria):
@@ -119,6 +127,7 @@ class HasDate(BaseCriteria):
     pass this criteria.
     """
     criteria_name = "has_date"
+
     def __init__(self, **kwargs):
         super(HasDate, self).__init__(kwargs)
         self.argument = True
@@ -132,12 +141,11 @@ class HasDate(BaseCriteria):
 
         # determine if the item DOES have a date (and it should)
         if has_date and not parsed_name['date']:
-            self.debug("FAILED has_date criteria")
             return False
 
         # all other cases should pass
-        self.debug("PASSES has_date criteria")
         return True
+
 
 class Hour(ListArgumentCriteria):
     def test(self, filename, parsed_name):
@@ -145,18 +153,21 @@ class Hour(ListArgumentCriteria):
         self.argument = self.make_list(self.argument)
         # ignore any hour besides the requested one
         if parsed_name['date'].hour not in self.argument:
-            self.debug("FAILED hour criteria")
             return False
         return True
 
+
 class ExceptHour(Hour):
     criteria_name = "except_hour"
+
     def test(self, filename, parsed_name):
         return not super(ExceptHour, self).test(filename, parsed_name)
 
 # ---------------------------------------------------------------------
 # OTHER CRITERIA
 # ---------------------------------------------------------------------
+
+
 class Pattern(BaseCriteria):
     """
     Match against a RegExp pattern
@@ -164,11 +175,9 @@ class Pattern(BaseCriteria):
     def test(self, filename, parsed_name):
         self.debugArguments(filename, parsed_name)
         if not re.match(self.argument, filename):
-            self.debug("FAILED pattern criteria")
             return False
-
-        self.debug("PASSED pattern criteria")
         return True
+
 
 class Startswith(ListArgumentCriteria):
     def test(self, filename, parsed_name):
@@ -179,7 +188,9 @@ class Startswith(ListArgumentCriteria):
                 break
         return passes
 
+
 class ExceptStartswith(Startswith):
     criteria_name = "except_startswith"
+
     def test(self, filename, parsed_name):
         return not super(ExceptStartswith, self).test(filename, parsed_name)
