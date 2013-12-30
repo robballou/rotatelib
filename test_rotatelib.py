@@ -238,6 +238,22 @@ class TestRotationFunctions(unittest.TestCase):
         archives = rotatelib.list_archives(items=items, except_startswith='asdf')
         self.assertEqual(len(archives), 2)
 
+    def testListArchiveWithEndswithCriteria(self):
+        items = ['test.txt', 'test2009-06-15T11.zip', 'test2009-06-20T01.bz2', 'test.zip']
+        archives = rotatelib.list_archives(items=items, endswith='bz2')
+        self.assertEqual(len(archives), 1)
+        archives = rotatelib.list_archives(items=items, endswith=['bz2', 'zip'])
+        self.assertEqual(len(archives), 2)
+        archives = rotatelib.list_archives(items=items, endswith='asdf')
+        self.assertEqual(len(archives), 0)
+
+    def testListArchiveWithExceptEndswithCriteria(self):
+        items = ['test.txt', 'test2009-06-15T11.zip', 'test2009-06-20T01.bz2', 'test.zip']
+        archives = rotatelib.list_archives(items=items, except_endswith='bz2')
+        self.assertEqual(len(archives), 1)
+        archives = rotatelib.list_archives(items=items, except_endswith='asdf')
+        self.assertEqual(len(archives), 2)
+
     def testMeetsCriteriaWithYearCriteria(self):
         self.assertTrue(rotatelib.meets_criteria("./", "test20120101.zip", year=2012))
         self.assertFalse(rotatelib.meets_criteria("./", "test20110101.zip", year=2012))

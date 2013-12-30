@@ -195,6 +195,23 @@ class Pattern(BaseCriteria):
         return True
 
 
+class Endswith(ListArgumentCriteria):
+    def test(self, filename, parsed_name):
+        passes = False
+        for s in self.argument:
+            if filename.endswith(s):
+                passes = True
+                break
+        return passes
+
+
+class ExceptEndswith(Endswith):
+    criteria_name = "except_endswith"
+
+    def test(self, filename, parsed_name):
+        return not super(ExceptEndswith, self).test(filename, parsed_name)
+
+
 class Startswith(ListArgumentCriteria):
     def test(self, filename, parsed_name):
         passes = False
