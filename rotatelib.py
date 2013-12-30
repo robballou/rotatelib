@@ -92,6 +92,13 @@ def connect_to_s3(aws_access_key_id, aws_secret_access_key):
     return S3Connection(aws_access_key_id, aws_secret_access_key)
 
 
+def has_date(fn):
+    parsed_name = parse_name(fn)
+    if parsed_name['date']:
+        return True
+    return False
+
+
 def is_archive(fn):
     """
     Determines if the requested filename is an archive or not. See parse_name()
@@ -213,6 +220,25 @@ def list_backup_tables(db, db_type=None, **kwargs):
     return backup_tables
 
 
+def list_items(directory='./', items=None, s3bucket=None, aws_access_key_id=None, aws_secret_access_key=None, **kwargs):
+    if not items:
+        if not s3bucket:
+            # regular file system request
+            items = os.listdir(directory)
+        else:
+            # s3 request
+            try:
+                s3 = connect_to_s3(aws_access_key_id, aws_secret_access_key)
+                bucket = s3.get_bucket(s3bucket)
+                if directory == './':
+                    directory = ''
+                items = [item for item in bucket.list(directory)]
+            except NameError, e:
+                raise Exception('To use the S3 library, you must have the boto python library: %s', e)
+    items = [archive for archive in items if has_date(archive) and meets_criteria(directory, archive, **kwargs)]
+    return items
+
+
 def list_logs(directory='./', items=None, s3bucket=None, aws_access_key_id=None, aws_secret_access_key=None, **kwargs):
     """
     List all of the log files in the directory that meet the criteria.
@@ -258,7 +284,7 @@ def meets_criteria(directory, filename, **kwargs):
         after
         before
         day
-        exceot_day
+        except_day
         except_hour
         has_date
         hour
@@ -303,6 +329,26 @@ def meets_criteria(directory, filename, **kwargs):
         passes = False
         for s in startswith:
             if filename.startswith(s):
+                passes = True
+                break
+        if passes:
+            return False
+    # name must end with the string
+    if 'endswith' in kwargs:
+        endswith = _make_list(kwargs['endswith'])
+        passes = False
+        for s in endswith:
+            if filename.endswith(s):
+                passes = True
+                break
+        if not passes:
+            return False
+    # name must not end with the string
+    if 'except_endswith' in kwargs:
+        endswith = _make_list(kwargs['endswith'])
+        passes = False
+        for s in endswith:
+            if filename.endswith(s):
                 passes = True
                 break
         if passes:

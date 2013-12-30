@@ -1,6 +1,6 @@
 # Rotatelib
 
-Version: 0.6
+Version: 0.7
 
 Module for assisting in querying the file system, databases, or Amazon Web Services (AWS) for backups/archives to rotate.
 
@@ -27,6 +27,9 @@ Sample Python script using rotatelib:
     # remove those backups we just found
     rotatelib.remove_items(directory=backups, items=items)
 
+    # look for some images that have dates
+    items = rotatelib.list_items(directory=backups, before=datetime.timedelta(5), endswith=".png")
+
 ## Database example
 
 You may also now give it database connections to work with:
@@ -45,25 +48,25 @@ You may also now give it database connections to work with:
 
 ## S3 example
 
-If you have the [boto python library][1] installed, you can even access items in an S3 
+If you have the [boto python library][1] installed, you can even access items in an S3
 bucket:
 
     import datetime
     import rotatelib
-    
+
     """
     When you call list_archives or remove_items with an s3bucket argument, the library
     will look in your environment variables for AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
     If you do not want to use environment variables, you can pass those in as keyword args
     (aws_access_key_id and aws_secret_access_key).
     """
-    
+
     # list all archive items
     items = rotatelib.list_archives(s3bucket='mybucket')
-    
+
     # list all archive items that are older than 5 days
     items = rotatelib.list_archives(s3bucket='mybucket', before=datetime.timedelta(5))
-    
+
     rotatelib.remove_items(items=items, s3bucket='mybucket')
 
 ## EC2 example
@@ -72,20 +75,20 @@ If you have the [boto python library][1] installed, you can even rotate ec2 snap
 
     import datetime
     import rotatelib
-    
+
     """
     When you call list_archives or remove_items with an ec2snapshots argument, the library
     will look in your environment variables for AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
     If you do not want to use environment variables, you can pass those in as keyword args
     (aws_access_key_id and aws_secret_access_key).
     """
-    
+
     # list all archive items
     items = rotatelib.list_archives(ec2snapshots=True)
-    
+
     # list all archive items that are older than 5 days
     items = rotatelib.list_archives(ec2snapshots=True, before=datetime.timedelta(5))
-    
+
     rotatelib.remove_items(items=items, ec2snapshots=True)
 
 By default, `list_archives` will use the snapshots description to find a date. If not date is found,
@@ -95,7 +98,7 @@ to use the `start_time`, you can use the `snapshot_use_start_time` option.
     # list all archive items that are older than 5 days, using start_time
     items = rotatelib.list_archives(ec2snapshots=True, before=datetime.timedelta(5), snapshot_use_start_time=True)
 
-Note that the EC2 option will only look at snapshots owned by the account for the credentials that are 
+Note that the EC2 option will only look at snapshots owned by the account for the credentials that are
 used.
 
 ## Criteria
@@ -105,7 +108,9 @@ To help query for the items you want, there are a number of criteria tests:
   - after (datetime or timedelta)
   - before (datetime or timedelta)
   - day (int or list of ints)
+  - endswith (string or list of strings)
   - except_day (int or list of ints)
+  - except_endswith (string or list of strings)
   - except_hour (int or list of ints)
   - except_startswith (string or list of strings)
   - has_date (datetime)
@@ -113,12 +118,13 @@ To help query for the items you want, there are a number of criteria tests:
   - startswith (string or list of strings)
   - pattern (regex)
 
-**New in version 0.6:** `startswith` and `except_startswith` were added.  
+**New in version 0.7:** `startswith` and `except_startswith` were added. `list_items` and `has_date` were added.
+**New in version 0.6:** `startswith` and `except_startswith` were added.
 **New in version 0.2:** `day` and `except_day` were added. `day`, `hour`, `except_day`, and `except_hour` all accept lists as well.
 
 ## License
 
-Copyright (c) 2011 Rob Ballou
+Copyright (c) 2013 Rob Ballou
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
