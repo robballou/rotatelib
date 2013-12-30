@@ -119,8 +119,8 @@ To help query for the items you want, there are a number of criteria tests:
   - pattern (regex)
   - year (int or list of ints)
 
-**New in version 1.0:** `year` and `except_year` were added; criteria were refactored into their own class-based approach. This may also require you to re-install "rotatelib.py" is now a module.
-**New in version 0.6:** `startswith` and `except_startswith` were added.
+**New in version 1.0:** criteria added: `year`, `except_year`, `endswith`, and `except_endswith` were added; criteria were refactored into their own class-based approach. This may also require you to re-install as "rotatelib.py" is now a module.  
+**New in version 0.6:** `startswith` and `except_startswith` were added.  
 **New in version 0.2:** `day` and `except_day` were added. `day`, `hour`, `except_day`, and `except_hour` all accept lists as well.
 
 ## License
