@@ -1,6 +1,6 @@
 # Rotatelib
 
-Version: **1.0rc1**
+Version: **1.0rc2**
 
 **Important: as of version 1.0, rotatelib will now be a module instead of just a python script. This may require that you re-install the module.**
 
@@ -55,20 +55,20 @@ If you have the [boto python library][1] installed, you can even access items in
 
     import datetime
     import rotatelib
-    
+
     """
     When you call list_archives or remove_items with an s3bucket argument, the library
     will look in your environment variables for AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
     If you do not want to use environment variables, you can pass those in as keyword args
     (aws_access_key_id and aws_secret_access_key).
     """
-    
+
     # list all archive items
     items = rotatelib.list_archives(s3bucket='mybucket')
-    
+
     # list all archive items that are older than 5 days
     items = rotatelib.list_archives(s3bucket='mybucket', before=datetime.timedelta(5))
-    
+
     rotatelib.remove_items(items=items, s3bucket='mybucket')
 
 ## EC2 example
@@ -77,20 +77,20 @@ If you have the [boto python library][1] installed, you can even rotate ec2 snap
 
     import datetime
     import rotatelib
-    
+
     """
     When you call list_archives or remove_items with an ec2snapshots argument, the library
     will look in your environment variables for AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
     If you do not want to use environment variables, you can pass those in as keyword args
     (aws_access_key_id and aws_secret_access_key).
     """
-    
+
     # list all archive items
     items = rotatelib.list_archives(ec2snapshots=True)
-    
+
     # list all archive items that are older than 5 days
     items = rotatelib.list_archives(ec2snapshots=True, before=datetime.timedelta(5))
-    
+
     rotatelib.remove_items(items=items, ec2snapshots=True)
 
 By default, `list_archives` will use the snapshots description to find a date. If not date is found,
