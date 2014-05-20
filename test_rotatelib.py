@@ -266,26 +266,34 @@ class TestRotationFunctions(unittest.TestCase):
     def testListItemsWithExceptFirstPerDayCriteria(self):
         items = ['test2014-05-20T013000.sql', 'test2014-05-20T023000.sql', 'test2014-06-20T013000.sql']
         found_items = rotatelib.list_items(items=items, except_first='day')
-        self.assertEqual(len(found_items), 2)
-        self.assertTrue('test2014-05-20T013000.sql' in found_items)
+        self.assertEqual(len(found_items), 1)
+        self.assertFalse('test2014-05-20T013000.sql' in found_items)
+        self.assertFalse('test2014-06-20T013000.sql' in found_items)
 
     def testListItemsWithExceptFirstPerMonthCriteria(self):
         items = ['test2014-05-20T013000.sql', 'test2014-05-20T023000.sql', 'test2014-06-20T013000.sql']
         found_items = rotatelib.list_items(items=items, except_first='month')
-        self.assertEqual(len(found_items), 2)
-        self.assertTrue('test2014-05-20T013000.sql' in found_items)
+        self.assertEqual(len(found_items), 1)
+        self.assertFalse('test2014-05-20T013000.sql' in found_items)
+        self.assertFalse('test2014-06-20T013000.sql' in found_items)
 
     def testListItemsWithExceptLastPerDayCriteria(self):
-        items = ['test2014-05-20T013000.sql', 'test2014-05-20T023000.sql', 'test2014-06-20T013000.sql']
+        items = [
+          'test2014-05-20T013000.sql',
+          'test2014-05-20T023000.sql',
+          'test2014-06-20T013000.sql'
+        ]
         found_items = rotatelib.list_items(items=items, except_last='day')
-        self.assertEqual(len(found_items), 2)
-        self.assertTrue('test2014-05-20T023000.sql' in found_items)
+        self.assertEqual(len(found_items), 1)
+        self.assertTrue('test2014-05-20T013000.sql' in found_items)
 
     def testListItemsWithExceptLastPerMonthCriteria(self):
         items = ['test2014-05-20T013000.sql', 'test2014-05-20T023000.sql', 'test2014-06-20T013000.sql']
         found_items = rotatelib.list_items(items=items, except_last='month')
-        self.assertEqual(len(found_items), 2)
-        self.assertTrue('test2014-05-20T023000.sql' in found_items)
+        self.assertEqual(len(found_items), 1)
+        self.assertFalse('test2014-05-20T023000.sql' in found_items)
+        self.assertFalse('test2014-06-20T013000.sql' in found_items)
+        self.assertTrue('test2014-05-20T013000.sql' in found_items)
 
 
 class TestDBRotationFunctions(unittest.TestCase):

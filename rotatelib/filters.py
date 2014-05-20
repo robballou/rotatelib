@@ -43,7 +43,7 @@ class ExceptFirst(BaseFilter):
     def __init__(self, debug=False):
         super(ExceptFirst, self).__init__(debug)
         self.dates = {}
-        self.reverse = False
+        self.reverse = True
 
     def filter(self, items):
         return_items = []
@@ -62,10 +62,17 @@ class ExceptFirst(BaseFilter):
 
         for date in self.dates:
             if len(self.dates[date]) == 1:
-                return_items.append(self.dates[date][0]['item'])
+                # there is only one item, we don't need to add it
+                pass
             else:
+                # there is more than one value in this day, so we want to sort them by date first
                 self.dates[date].sort(key=lambda x: x['parsed']['date'], reverse=self.reverse)
-                return_items.append(self.dates[date][0]['item'])
+
+                # next remove the last item (in this case, the last item is the "first")
+                self.dates[date].pop()
+
+                # add the rest of values to the list
+                return_items.extend([item['item'] for item in self.dates[date]])
 
         return return_items
 
@@ -74,4 +81,4 @@ class ExceptLast(ExceptFirst):
 
     def __init__(self, debug=False):
         super(ExceptLast, self).__init__(debug)
-        self.reverse = True
+        self.reverse = False

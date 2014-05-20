@@ -38,7 +38,7 @@ environment or you'll need to pass those as keyword arguments to list_archives o
 
 """
 __author__ = 'Rob Ballou (rob.ballou@gmail.com)'
-__version__ = '1.0rc1'
+__version__ = '1.0rc2'
 __license__ = 'MIT'
 
 import collections
