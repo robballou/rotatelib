@@ -38,16 +38,13 @@ environment or you'll need to pass those as keyword arguments to list_archives o
 
 """
 __author__ = 'Rob Ballou (rob.ballou@gmail.com)'
-__version__ = '1.0rc1'
+__version__ = '0.6'
 __license__ = 'MIT'
 
 import collections
 import re
 import datetime
 import os
-import criteria
-import filters
-import inspect
 
 try:
     from boto.s3.connection import S3Connection
@@ -55,16 +52,6 @@ try:
     from boto.ec2.snapshot import Snapshot
 except ImportError, e:
     pass
-
-CRITERIA = {
-    # 'has_date': criteria.HasDate,
-    # 'pattern': criteria.Pattern
-}
-
-FILTERS = {}
-
-def add_criteria(class_name):
-    CRITERIA.append(class_name)
 
 
 def connect_to_ec2(aws_access_key_id, aws_secret_access_key):
@@ -105,52 +92,7 @@ def connect_to_s3(aws_access_key_id, aws_secret_access_key):
     return S3Connection(aws_access_key_id, aws_secret_access_key)
 
 
-def filter_criteria(items, **kwargs):
-    """
-    Similar to meets_criteria() but fires afterwards and can filter the entire set (meets_criteria()
-    only looks at a single item.
-    """
-    available_filters = get_filters()
-
-    for argument_filter in kwargs.keys():
-        if argument_filter in available_filters:
-            this_filter = available_filters[argument_filter]()
-            if 'debug' in kwargs and kwargs['debug']:
-                this_filter.debugMode = True
-            this_filter.set_argument(kwargs[argument_filter])
-            items = this_filter.filter(items)
-    return items
-
-def get_criteria():
-    """
-    Get the criteria available for this module
-    """
-    for item in criteria.__dict__:
-        this_item = criteria.__dict__[item]
-        if inspect.isclass(this_item) and issubclass(this_item, criteria.BaseCriteria):
-            criteria_name = this_item.criteria_name
-            if not criteria_name:
-                criteria_name = item.lower()
-            if criteria_name not in CRITERIA:
-                CRITERIA[criteria_name] = this_item
-    return CRITERIA
-
-
-def get_filters():
-    for item in filters.__dict__:
-      this_item = filters.__dict__[item]
-      if inspect.isclass(this_item) and issubclass(this_item, filters.BaseFilter):
-          filter_name = this_item.filter_name
-          if not filter_name:
-              filter_name = item.lower()
-          if filter_name not in FILTERS:
-              FILTERS[filter_name] = this_item
-    return FILTERS
-
 def has_date(fn):
-    """
-    Does this filename have a date?
-    """
     parsed_name = parse_name(fn)
     if parsed_name['date']:
         return True
@@ -180,8 +122,7 @@ def is_archive(fn):
 
 def is_backup_table(table):
     """
-    Determines if the table name is an archive or not. See parse_name(). Essentially
-    the table name must have a date portion.
+    Determines if the table name is an archive or not. See parse_name()
 
     Returns True/False
     """
@@ -280,12 +221,6 @@ def list_backup_tables(db, db_type=None, **kwargs):
 
 
 def list_items(directory='./', items=None, s3bucket=None, aws_access_key_id=None, aws_secret_access_key=None, **kwargs):
-    """
-    List all of the items that meet the criteria
-
-    This method is very similar to the list_archives and list_logs methods, but allows you to find
-    items that are not logs or archives.
-    """
     if not items:
         if not s3bucket:
             # regular file system request
@@ -301,15 +236,6 @@ def list_items(directory='./', items=None, s3bucket=None, aws_access_key_id=None
             except NameError, e:
                 raise Exception('To use the S3 library, you must have the boto python library: %s', e)
     items = [archive for archive in items if has_date(archive) and meets_criteria(directory, archive, **kwargs)]
-
-    filter_items = []
-    for item in items:
-        filter_items.append({
-          'item': item,
-          'parsed': parse_name(item)
-        })
-    items = filter_criteria(filter_items, **kwargs)
-
     return items
 
 
@@ -349,22 +275,26 @@ def _make_list(item):
 
 def meets_criteria(directory, filename, **kwargs):
     """
-    Current criteria:
+    Check the filename to see if it meets the criteria for this query.
 
-      - after (datetime or timedelta)
-      - before (datetime or timedelta)
-      - day (int or list of ints)
-      - except_day (int or list of ints)
-      - except_hour (int or list of ints)
-      - except_startswith (string or list of strings)
-      - except_year (int or list of ints)
-      - has_date (true/false)
-      - hour (int or list of ints)
-      - startswith (string or list of strings)
-      - pattern (regex)
-      - year (int or list of ints)
+    Note: the has_date criteria is "on" by default. So if you don't specify that as "off" then
+    this will only pass items that have a date in the filename!
+
+    Current criteria:
+        after
+        before
+        day
+        except_day
+        except_hour
+        has_date
+        hour
+        pattern (regex)
+        startswith
+
+    Other options:
+        debug
+        snapshot_use_start_time
     """
-    # figure out the filename
     try:
         filename = filename.description
     except:
@@ -375,35 +305,106 @@ def meets_criteria(directory, filename, **kwargs):
     snapshot_use_start_time = False
     if 'snapshot_use_start_time' in kwargs:
         snapshot_use_start_time = kwargs['snapshot_use_start_time']
-
-    # parse the filename
     name = parse_name(filename, snapshot_use_start_time=snapshot_use_start_time)
-
-    # has_date is used by default, so make sure it is on
-    if 'has_date' not in kwargs:
-        kwargs['has_date'] = True
-
-    # if debug is not there, explicitly set it off
-    if 'debug' not in kwargs:
-        kwargs['debug'] = False
-
-    available_criteria = get_criteria()
-
-    if kwargs['debug']:
-        criteria_for_this_item = set(available_criteria).intersection(set(kwargs.keys()))
-        print "\n\tFilename.: %s" % filename
-        print "\tDate.....: %s" % name['date']
-        print "\tTests....: %s" % criteria_for_this_item
-        for ct in criteria_for_this_item:
-            print "\t\t%s: %s" % (ct, kwargs[ct])
-
-    for argument_criteria in kwargs.keys():
-        if argument_criteria in available_criteria:
-            this_criteria = available_criteria[argument_criteria]()
-            if kwargs['debug']:
-                this_criteria.debugMode = True
-            this_criteria.set_argument(kwargs[argument_criteria])
-            if not this_criteria.test(filename, name):
+    # check that we parsed a date
+    if (('has_date' in kwargs and kwargs['has_date'] == True) or not 'has_date' in kwargs) and not name['date']:
+        return False
+    # name must match the pattern
+    if 'pattern' in kwargs:
+        if not re.match(kwargs['pattern'], filename):
+            return False
+    # name must start with the string
+    if 'startswith' in kwargs:
+        startswith = _make_list(kwargs['startswith'])
+        passes = False
+        for s in startswith:
+            if filename.startswith(s):
+                passes = True
+                break
+        if not passes:
+            return False
+    # name must not start with the string
+    if 'except_startswith' in kwargs:
+        startswith = _make_list(kwargs['except_startswith'])
+        passes = False
+        for s in startswith:
+            if filename.startswith(s):
+                passes = True
+                break
+        if passes:
+            return False
+    # name must end with the string
+    if 'endswith' in kwargs:
+        endswith = _make_list(kwargs['endswith'])
+        passes = False
+        for s in endswith:
+            if filename.endswith(s):
+                passes = True
+                break
+        if not passes:
+            return False
+    # name must not end with the string
+    if 'except_endswith' in kwargs:
+        endswith = _make_list(kwargs['endswith'])
+        passes = False
+        for s in endswith:
+            if filename.endswith(s):
+                passes = True
+                break
+        if passes:
+            return False
+    if name['date']:
+        if 'before' in kwargs:
+            # check if this is a timedelta object
+            try:
+                if kwargs['before'].days:
+                    kwargs['before'] = datetime.datetime.today() - kwargs['before']
+            except AttributeError:
+                pass
+            if 'debug' in kwargs:
+                print "Date: %s" % name['date']
+                print "Before: %s" % kwargs['before']
+            if name['date'] >= kwargs['before']:
+                if 'debug' in kwargs:
+                    print "Failed Before"
+                return False
+        if 'after' in kwargs:
+            try:
+                if kwargs['after'].days:
+                    kwargs['after'] = datetime.datetime.today() - kwargs['after']
+            except AttributeError:
+                pass
+            if name['date'] <= kwargs['after']:
+                if 'debug' in kwargs:
+                    print "Failed After"
+                return False
+        if 'hour' in kwargs:
+            kwargs['hour'] = _make_list(kwargs['hour'])
+            # ignore any hour besides the requested one
+            if name['date'].hour not in kwargs['hour']:
+                if 'debug' in kwargs:
+                    print "Failed Hour"
+                return False
+        if 'except_hour' in kwargs:
+            kwargs['except_hour'] = _make_list(kwargs['except_hour'])
+            # ignore the specified hour
+            if name['date'].hour in kwargs['except_hour']:
+                if 'debug' in kwargs:
+                    print "Failed Except Hour"
+                return False
+        if 'day' in kwargs:
+            kwargs['day'] = _make_list(kwargs['day'])
+            # ignore any day besides the requested on
+            if name['date'].day not in kwargs['day']:
+                if 'debug' in kwargs:
+                    print "Failed Day"
+                return False
+        if 'except_day' in kwargs:
+            kwargs['except_day'] = _make_list(kwargs['except_day'])
+            # ignore any day besides the requested on
+            if name['date'].day in kwargs['except_day']:
+                if 'debug' in kwargs:
+                    print "Failed Except Day"
                 return False
     return True
 

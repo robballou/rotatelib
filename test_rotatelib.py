@@ -263,6 +263,30 @@ class TestRotationFunctions(unittest.TestCase):
         self.assertFalse(rotatelib.meets_criteria("./", "test20120101.zip", except_year=2012))
         self.assertTrue(rotatelib.meets_criteria("./", "test20110101.zip", except_year=2012))
 
+    def testListItemsWithExceptFirstPerDayCriteria(self):
+        items = ['test2014-05-20T013000.sql', 'test2014-05-20T023000.sql', 'test2014-06-20T013000.sql']
+        found_items = rotatelib.list_items(items=items, except_first='day')
+        self.assertEqual(len(found_items), 2)
+        self.assertTrue('test2014-05-20T013000.sql' in found_items)
+
+    def testListItemsWithExceptFirstPerMonthCriteria(self):
+        items = ['test2014-05-20T013000.sql', 'test2014-05-20T023000.sql', 'test2014-06-20T013000.sql']
+        found_items = rotatelib.list_items(items=items, except_first='month')
+        self.assertEqual(len(found_items), 2)
+        self.assertTrue('test2014-05-20T013000.sql' in found_items)
+
+    def testListItemsWithExceptLastPerDayCriteria(self):
+        items = ['test2014-05-20T013000.sql', 'test2014-05-20T023000.sql', 'test2014-06-20T013000.sql']
+        found_items = rotatelib.list_items(items=items, except_last='day')
+        self.assertEqual(len(found_items), 2)
+        self.assertTrue('test2014-05-20T023000.sql' in found_items)
+
+    def testListItemsWithExceptLastPerMonthCriteria(self):
+        items = ['test2014-05-20T013000.sql', 'test2014-05-20T023000.sql', 'test2014-06-20T013000.sql']
+        found_items = rotatelib.list_items(items=items, except_last='month')
+        self.assertEqual(len(found_items), 2)
+        self.assertTrue('test2014-05-20T023000.sql' in found_items)
+
 
 class TestDBRotationFunctions(unittest.TestCase):
     def create_tables(self, db, tables):
