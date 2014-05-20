@@ -123,9 +123,20 @@ To help query for the items you want, there are a number of criteria tests:
 **New in version 0.6:** `startswith` and `except_startswith` were added.  
 **New in version 0.2:** `day` and `except_day` were added. `day`, `hour`, `except_day`, and `except_hour` all accept lists as well.
 
+## Filters
+
+Filters are new in version 1.0. They are similar to criteria except they can act on the entire set. Current filters:
+
+  - except_first ('day' or 'month')
+  - except_last ('day' or 'month')
+
+For example, if you want all the items older than 5 days, but keep the first item per day:
+
+    rotatelib.list_items(before=datetime.timedelta(5), except_first='day')
+
 ## License
 
-Copyright (c) 2013 Rob Ballou
+Copyright (c) 2014 Rob Ballou
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
