@@ -469,7 +469,10 @@ def remove_items(directory='./', items=None, db=None, s3bucket=None, ec2snapshot
     if not db and not s3bucket and not ec2snapshots:
         # OS level items
         for item in items:
-            this_item = os.path.join(directory, item)
+            try:
+                this_item = os.path.join(directory, item)
+            except AttributeError, e:
+                this_item = os.path.join(directory, item.item)
             os.remove(this_item)
     elif not db and s3bucket and not ec2snapshots:
         # S3 items
