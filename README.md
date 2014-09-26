@@ -1,6 +1,6 @@
 # Rotatelib
 
-Version: **1.0rc2**
+Version: **1.0rc3**
 
 **Important: as of version 1.0, rotatelib will now be a module instead of just a python script. This may require that you re-install the module.**
 
