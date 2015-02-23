@@ -2,6 +2,8 @@
 
 Version: 0.7
 
+See also [the version 1.0 branch which has some more features](https://github.com/robballou/rotatelib/tree/1.0) or the [new JavaScript port of this library](https://github.com/robballou/js-rotatelib).
+
 Module for assisting in querying the file system, databases, or Amazon Web Services (AWS) for backups/archives to rotate.
 
 `rotatelib` supports looking for archives and backups in the following places:
