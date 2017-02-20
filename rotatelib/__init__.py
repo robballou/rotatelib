@@ -164,8 +164,11 @@ def is_archive(fn):
     Returns True/False
     """
     # check if this is an ec2 object
-    if isinstance(fn, Snapshot):
-        return True
+    try:
+        if isinstance(fn, Snapshot):
+            return True
+    except:
+        pass
 
     extensions = ['.gz', '.bz2', '.zip', '.tgz']
     try:
