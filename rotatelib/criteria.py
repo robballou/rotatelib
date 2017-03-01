@@ -20,7 +20,7 @@ class BaseCriteria(object):
     def debug(self, message):
         if not self.debugMode:
             return
-        print message
+        print(message)
 
     def debugArguments(self, filename, parsed_name):
         if not self.debugMode:
@@ -31,7 +31,7 @@ class BaseCriteria(object):
         Convert the item to a list, if it isn't one. Useful in cases where
         the criteria needs to act on multiple items.
         """
-        if isinstance(item, basestring) or not isinstance(item, collections.Iterable):
+        if isinstance(item, str) or not isinstance(item, collections.Iterable):
             item = [item]
         return item
 

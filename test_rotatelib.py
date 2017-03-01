@@ -42,6 +42,14 @@ class TestArchiveFunctions(unittest.TestCase):
         self.assertEqual(result['date'].year, 2009)
         self.assertEqual(result['date'].month, 6)
 
+    def testParseName4(self):
+        f = 'Screenshot 2017-02-27 12.51.24.png'
+        result = rotatelib.parse_name(f)
+        self.assertTrue(result['date'])
+        self.assertEqual(result['date'].year, 2017)
+        self.assertEqual(result['date'].month, 2)
+        self.assertEqual(result['date'].day, 27)
+
     def testParseNameSnapshotObject(self):
         o = SnapshotMock('Test 2011-01-01')
         result = rotatelib.parse_name(o)

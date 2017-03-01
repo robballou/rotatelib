@@ -12,7 +12,7 @@ class BaseFilter(object):
     def debug(self, message):
         if not self.debugMode:
             return
-        print message
+        print(message)
 
     def debugArguments(self, filename, parsed_name):
         if not self.debugMode:

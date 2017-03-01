@@ -45,8 +45,8 @@ import collections
 import re
 import datetime
 import os
-import criteria
-import filters
+from . import criteria
+from . import filters
 import inspect
 
 try:
@@ -190,7 +190,7 @@ def is_backup_table(table):
     """
     try:
         parsed = parse_name(table)
-    except Exception, e:
+    except Exception as e:
         raise Exception('Could not parse the table name <%s>: %s' % (table, e))
     return parsed['date'] != None
 
@@ -236,14 +236,14 @@ def list_archives(directory='./', items=None, s3bucket=None, ec2snapshots=None, 
                 if directory == './':
                     directory = ''
                 items = [item for item in bucket.list(directory)]
-            except NameError, e:
+            except NameError as e:
                 raise Exception('To use the S3 library, you must have the boto python library: %s' % e)
         elif ec2snapshots and not s3bucket:
             # ec2 request
             try:
                 ec2 = connect_to_ec2(aws_access_key_id, aws_secret_access_key)
                 items = ec2.get_all_snapshots(owner='self')
-            except NameError, e:
+            except NameError as e:
                 raise Exception('To use the EC2 library, you must have the boto python library: %s' % e)
 
     items = [archive for archive in items if is_archive(archive) and meets_criteria(directory, archive, **kwargs)]
@@ -266,13 +266,13 @@ def list_backup_tables(db, db_type=None, **kwargs):
         try:
             cur.execute('SHOW TABLES')
             tables = [table[0] for table in cur.fetchall()]
-        except Exception, e:
+        except Exception as e:
             pass
     if not tables and (db_type in ['sqlite', 'sqlite3'] or db_type == None):
         try:
             cur.execute('''SELECT * FROM sqlite_master WHERE type='table' ''')
             tables = [table[1] for table in cur.fetchall()]
-        except Exception, e:
+        except Exception as e:
             raise e
 
     if not tables:
@@ -301,7 +301,7 @@ def list_items(directory='./', items=None, s3bucket=None, aws_access_key_id=None
                 if directory == './':
                     directory = ''
                 items = [item for item in bucket.list(directory)]
-            except NameError, e:
+            except NameError as e:
                 raise Exception('To use the S3 library, you must have the boto python library: %s', e)
     items = [archive for archive in items if has_date(archive) and meets_criteria(directory, archive, **kwargs)]
 
@@ -321,7 +321,7 @@ def list_logs(directory='./', items=None, s3bucket=None, aws_access_key_id=None,
     List all of the log files in the directory that meet the criteria.
 
     This method is the same as `list_archives` except that it will only look at things that meet the `is_log`
-    method. This also supports AWS connections, but only S3 items (EC2Snapshots will likely not end with ".log"
+    method. This also supports AWS connections as but only S3 items (EC2Snapshots will likely not end with ".log"
     which is the criteria used for `is_log`)
 
     See meets_criteria() for list of kwargs that can be used to limit the results.
@@ -338,7 +338,7 @@ def list_logs(directory='./', items=None, s3bucket=None, aws_access_key_id=None,
                 if directory == './':
                     directory = ''
                 items = [item for item in bucket.list(directory)]
-            except NameError, e:
+            except NameError as e:
                 raise Exception('To use the S3 library, you must have the boto python library: %s', e)
     items = [archive for archive in items if is_log(archive) and meets_criteria(directory, archive, **kwargs)]
     return items
@@ -394,11 +394,11 @@ def meets_criteria(directory, filename, **kwargs):
 
     if kwargs['debug']:
         criteria_for_this_item = set(available_criteria).intersection(set(kwargs.keys()))
-        print "\n\tFilename.: %s" % filename
-        print "\tDate.....: %s" % name['date']
-        print "\tTests....: %s" % criteria_for_this_item
+        print("\n\tFilename.: %s" % filename)
+        print("\tDate.....: %s" % name['date'])
+        print("\tTests....: %s" % criteria_for_this_item)
         for ct in criteria_for_this_item:
-            print "\t\t%s: %s" % (ct, kwargs[ct])
+            print("\t\t%s: %s" % (ct, kwargs[ct]))
 
     for argument_criteria in kwargs.keys():
         if argument_criteria in available_criteria:
@@ -445,6 +445,10 @@ def parse_name(fn, debug=False, snapshot_use_start_time=False):
     elif re.search(r'(\d{4})-?(\d{2})-?(\d{2})', fn):
         result = re.findall(r'(\d{4})-?(\d{2})-?(\d{2})', fn)[0]
         item['date'] = datetime.datetime(int(result[0]), int(result[1]), int(result[2]))
+    # check YYYY-MM-DD HH:MM:SS
+    elif re.search(r'(\d{4})-(\d{2})-(\d{2}) (\d{2}):?(\d{2}):?(\d{2})?', fn):
+        result = re.findall(r'(\d{4})-(\d{2})-(\d{2}) (\d{2}):?(\d{2}):?(\d{2})?', fn)[0]
+        item['date'] = datetime.datetime(int(result[0]), int(result[1]), int(result[2]), int(result[3]), int(result[4]))
 
     if not item['date'] and o:
         try:
@@ -456,7 +460,7 @@ def parse_name(fn, debug=False, snapshot_use_start_time=False):
             pass
 
     if debug:
-        print item
+        print(item)
 
     return item
 
@@ -474,7 +478,7 @@ def remove_items(directory='./', items=None, db=None, s3bucket=None, ec2snapshot
         for item in items:
             try:
                 this_item = os.path.join(directory, item)
-            except AttributeError, e:
+            except TypeError as e:
                 this_item = os.path.join(directory, item['item'])
             os.remove(this_item)
     elif not db and s3bucket and not ec2snapshots:
