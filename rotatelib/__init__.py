@@ -53,7 +53,7 @@ try:
     from boto.s3.connection import S3Connection
     from boto.ec2.connection import EC2Connection
     from boto.ec2.snapshot import Snapshot
-except ImportError, e:
+except ImportError:
     pass
 
 CRITERIA = {
